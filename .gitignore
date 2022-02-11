@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Chalice serverless framework
+.chalice/deployments/
+.chalice/venv/
