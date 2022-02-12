@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import math
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -23,6 +24,12 @@ class Portfolio:
         added_growth = np.cumsum(added / cumulative_growth) * cumulative_growth
         return start_amount_growth + added_growth
 
+    def steps_until_certain(
+        self, start_amount: float, added_per_step: float, savings_goal: float
+    ) -> float:
+        """The number of steps until we are 100% sure that the goal reached"""
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True)
 class BalancedPortfolio(Portfolio):
@@ -39,6 +46,25 @@ class BalancedPortfolio(Portfolio):
             for component in self.components
         )
 
+    def steps_until_certain(
+        self, start_amount: float, added_per_step: float, savings_goal: float
+    ):
+        riskless_components = [
+            component
+            for component in self.components
+            if isinstance(component, RisklessPortfolio)
+        ]
+        riskless_weight = sum(component.weight for component in riskless_components)
+        riskless_return = sum(
+            component.return_per_step * component.weight / riskless_weight
+            for component in riskless_components
+        )
+        return RisklessPortfolio(return_per_step=riskless_return).steps_until_certain(
+            start_amount=start_amount * riskless_weight,
+            added_per_step=added_per_step * riskless_weight,
+            savings_goal=savings_goal,
+        )
+
 
 @dataclass(frozen=True)
 class RisklessPortfolio(Portfolio):
@@ -46,6 +72,16 @@ class RisklessPortfolio(Portfolio):
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.full(shape=num_steps, fill_value=self.return_per_step)
+
+    def steps_until_certain(
+        self, start_amount: float, added_per_step: float, savings_goal: float
+    ):
+        growth_per_step = 1 + self.return_per_step
+        added_contribution = added_per_step / math.log(growth_per_step)
+        return math.log(
+            (savings_goal + added_contribution) / (start_amount + added_contribution),
+            base=growth_per_step,
+        )
 
 
 @dataclass(frozen=True)
@@ -66,3 +102,8 @@ class RiskyPortfolio(Portfolio):
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.exp(self.log_return_distribution.rvs(num_steps)) - 1
+
+    def steps_until_certain(
+        self, start_amount: float, added_per_step: float, savings_goal: float
+    ):
+        return float("inf")
