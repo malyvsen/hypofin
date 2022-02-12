@@ -26,13 +26,12 @@ class Simulator:
     def sample_savings(
         self, num_steps: int, start_amount: float, added_per_step: float
     ) -> np.ndarray:
-        growth_series = 1 + np.concatenate(
-            [[0], self.sample_returns(num_steps - 1)], axis=0
-        )
-        cumulative_growth = np.cumprod(growth_series)
+        """
+        A sequence of amount saved up, projected num_steps ahead
+        The first element is already one step after the current situation
+        """
+        cumulative_growth = np.cumprod(1 + self.sample_returns(num_steps))
         start_amount_growth = start_amount * cumulative_growth
-        added = np.concatenate(
-            [[0], np.full(shape=num_steps - 1, fill_value=added_per_step)], axis=0
-        )
+        added = np.full(shape=num_steps, fill_value=added_per_step)
         added_growth = np.cumsum(added / cumulative_growth) * cumulative_growth
         return start_amount_growth + added_growth
