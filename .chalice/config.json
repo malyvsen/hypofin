@@ -1,6 +1,9 @@
 {
   "version": "2.0",
   "app_name": "hypofin",
+  "layers": [
+    "arn:aws:lambda:eu-west-3:959311844005:layer:AWSLambda-Python38-SciPy1x:106"
+  ],
   "stages": {
     "dev": {
       "api_gateway_stage": "api"
