@@ -10,7 +10,7 @@ def index():
     request_data = app.current_request.json_body
     num_steps = 256
     sure_evolution = np.linspace(
-        request_data["current_savings"], request_data["goal_amount"], num=num_steps
+        request_data["current_savings"], request_data["goal_price"], num=num_steps
     )
     risk_growth = np.cumprod(
         np.full(shape=num_steps, fill_value=1 + request_data["risk_preference"] * 1e-4)
