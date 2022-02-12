@@ -24,6 +24,39 @@ class Portfolio:
         added_growth = np.cumsum(added / cumulative_growth) * cumulative_growth
         return start_amount_growth + added_growth
 
+    def stratum(
+        self,
+        num_steps: int,
+        start_amount: float,
+        added_per_step: float,
+        stratum: float,
+        precision=1024,
+    ) -> np.ndarray:
+        assert 0 <= stratum <= 1
+        if stratum == 1:
+            return self.certain_stratum(
+                num_steps=num_steps,
+                start_amount=start_amount,
+                added_per_step=added_per_step,
+            )
+        return np.quantile(
+            [
+                self.sample_savings(
+                    num_steps=num_steps,
+                    start_amount=start_amount,
+                    added_per_step=added_per_step,
+                )
+                for simulation in range(precision)
+            ],
+            q=1 - stratum,
+            axis=0,
+        )
+
+    def certain_stratum(
+        self, num_steps: int, start_amount: float, added_per_step: float
+    ) -> np.ndarray:
+        raise NotImplementedError()
+
     def steps_until_certain(
         self, start_amount: float, added_per_step: float, savings_goal: float
     ) -> float:
@@ -40,28 +73,46 @@ class BalancedPortfolio(Portfolio):
 
     components: List[Component]
 
+    @property
+    def riskless_components(self):
+        return [
+            component
+            for component in self.components
+            if isinstance(component, RisklessPortfolio)
+        ]
+
+    @property
+    def riskless_weight(self):
+        return sum(component.weight for component in self.riskless_components)
+
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return sum(
             component.weight * component.portfolio.sample_returns(num_steps)
             for component in self.components
         )
 
+    def certain_stratum(
+        self, num_steps: int, start_amount: float, added_per_step: float
+    ) -> np.ndarray:
+        return sum(
+            component.certain_stratum(
+                num_steps=num_steps,
+                start_amount=start_amount * component.weight,
+                added_per_step=added_per_step * component.weight,
+            )
+            for component in self.riskless_components
+        )
+
     def steps_until_certain(
         self, start_amount: float, added_per_step: float, savings_goal: float
     ):
-        riskless_components = [
-            component
-            for component in self.components
-            if isinstance(component, RisklessPortfolio)
-        ]
-        riskless_weight = sum(component.weight for component in riskless_components)
         riskless_return = sum(
-            component.return_per_step * component.weight / riskless_weight
-            for component in riskless_components
+            component.return_per_step * component.weight / self.riskless_weight
+            for component in self.riskless_components
         )
         return RisklessPortfolio(return_per_step=riskless_return).steps_until_certain(
-            start_amount=start_amount * riskless_weight,
-            added_per_step=added_per_step * riskless_weight,
+            start_amount=start_amount * self.riskless_weight,
+            added_per_step=added_per_step * self.riskless_weight,
             savings_goal=savings_goal,
         )
 
@@ -72,6 +123,15 @@ class RisklessPortfolio(Portfolio):
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.full(shape=num_steps, fill_value=self.return_per_step)
+
+    def certain_stratum(
+        self, num_steps: int, start_amount: float, added_per_step: float
+    ) -> np.ndarray:
+        return self.sample_savings(
+            num_steps=num_steps,
+            start_amount=start_amount,
+            added_per_step=added_per_step,
+        )
 
     def steps_until_certain(
         self, start_amount: float, added_per_step: float, savings_goal: float
@@ -103,7 +163,12 @@ class RiskyPortfolio(Portfolio):
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.exp(self.log_return_distribution.rvs(num_steps)) - 1
 
+    def certain_stratum(
+        self, num_steps: int, start_amount: float, added_per_step: float
+    ) -> np.ndarray:
+        raise RuntimeError("Risky portfolio has no certainty")
+
     def steps_until_certain(
         self, start_amount: float, added_per_step: float, savings_goal: float
     ):
-        return float("inf")
+        raise RuntimeError("Risky portfolio has no certainty")
