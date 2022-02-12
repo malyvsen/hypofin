@@ -44,4 +44,24 @@ def index():
             )
             for _ in range(64)
         ],
+        "allocation": [
+            {
+                "name": "Amundi ETF J.P. Morgan GBI Global Government Bonds UCITS ETF DR",
+                "isin": " LU1437016204",
+                "current_amount": request_data["current_savings"]
+                * (1 - request_data["risk_preference"] / 100),
+                "monthly_amount": request_data["monthly_savings"]
+                * (1 - request_data["risk_preference"] / 100),
+            },
+            {
+                "name": "Lyxor Core MSCI World (DR) UCITS ETF - Acc",
+                "isin": "LU1781541179",
+                "current_amount": request_data["current_savings"]
+                * request_data["risk_preference"]
+                / 100,
+                "monthly_amount": request_data["monthly_savings"]
+                * request_data["risk_preference"]
+                / 100,
+            },
+        ],
     }
