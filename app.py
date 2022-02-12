@@ -8,41 +8,34 @@ app = Chalice(app_name="hypofin")
 @app.route("/", methods=["POST"], cors=True)
 def index():
     request_data = app.current_request.json_body
-    growth = np.cumprod(
-        np.full(shape=256, fill_value=1 + request_data["risk_preference"] / 100)
+    num_steps = 256
+    sure_evolution = np.linspace(
+        request_data["current_savings"], request_data["goal_amount"], num=num_steps
     )
-    monthly_growth = (
-        np.cumsum(np.full_like(growth, request_data["monthly_savings"]) / growth)
-        * growth
+    risk_growth = np.cumprod(
+        np.full(shape=num_steps, fill_value=1 + request_data["risk_preference"] * 1e-4)
     )
     return {
         "strata": [
             {
                 "probability": 0.5,
                 "num_years": 7,
-                "evolution": list(
-                    request_data["current_savings"] * growth + monthly_growth
-                ),
+                "evolution": list(sure_evolution * risk_growth),
             },
             {
                 "probability": 0.75,
                 "num_years": 13,
-                "evolution": list(request_data["current_savings"] + monthly_growth),
+                "evolution": list(sure_evolution * risk_growth**0.5),
             },
             {
                 "probability": 1,
                 "num_years": 17,
-                "evolution": list(
-                    request_data["current_savings"] / growth + monthly_growth
-                ),
+                "evolution": list(sure_evolution),
             },
         ],
         "bank_variant": {
             "num_years": 14,
-            "evolution": list(
-                request_data["current_savings"]
-                + np.cumsum(np.full_like(growth, request_data["monthly_savings"]))
-            ),
+            "evolution": list(sure_evolution * risk_growth**0.25),
         },
         "example_evolutions": [
             list(
