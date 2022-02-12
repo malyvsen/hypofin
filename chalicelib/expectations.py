@@ -1,4 +1,4 @@
-import hypofin.data as data
+import chalicelib.data as data
 
 
 def inflation() -> float:

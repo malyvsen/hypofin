@@ -1,5 +1,6 @@
 from chalice import Chalice
 import numpy as np
+from chalicelib import User, tax_systems
 
 
 app = Chalice(app_name="hypofin")
@@ -8,6 +9,13 @@ app = Chalice(app_name="hypofin")
 @app.route("/", methods=["POST"], cors=True)
 def index():
     request_data = app.current_request.json_body
+    user = User(
+        current_savings=request_data["current_savings"],
+        monthly_savings=request_data["monthly_savings"],
+        goal_price=request_data["goal_price"],
+        risk_preference=request_data["risk_preference"],
+        tax_system=tax_systems["poland"],
+    )
     num_steps = 256
     sure_evolution = np.linspace(
         request_data["current_savings"], request_data["goal_price"], num=num_steps
@@ -15,6 +23,7 @@ def index():
     risk_growth = np.cumprod(
         np.full(shape=num_steps, fill_value=1 + request_data["risk_preference"] * 1e-4)
     )
+    stock_allocation = user.risk_preference / 100
     return {
         "strata": [
             {
@@ -48,20 +57,18 @@ def index():
             {
                 "name": "Amundi ETF J.P. Morgan GBI Global Government Bonds UCITS ETF DR",
                 "isin": " LU1437016204",
-                "current_amount": request_data["current_savings"]
-                * (1 - request_data["risk_preference"] / 100),
-                "monthly_amount": request_data["monthly_savings"]
-                * (1 - request_data["risk_preference"] / 100),
+                "current_fraction": 1 - stock_allocation,
+                "current_amount": user.current_savings * (1 - stock_allocation),
+                "monthly_fraction": 1 - stock_allocation,
+                "monthly_amount": user.current_savings * (1 - stock_allocation),
             },
             {
                 "name": "Lyxor Core MSCI World (DR) UCITS ETF - Acc",
                 "isin": "LU1781541179",
-                "current_amount": request_data["current_savings"]
-                * request_data["risk_preference"]
-                / 100,
-                "monthly_amount": request_data["monthly_savings"]
-                * request_data["risk_preference"]
-                / 100,
+                "current_fraction": stock_allocation,
+                "current_amount": user.current_savings * stock_allocation,
+                "monthly_fraction": stock_allocation,
+                "monthly_amount": user.current_savings * stock_allocation,
             },
         ],
     }
