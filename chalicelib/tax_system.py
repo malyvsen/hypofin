@@ -18,6 +18,7 @@ class CapitalGainsTaxSystem(TaxSystem):
     tax: float
 
     def tax_savings(self, monthly_savings: accepted_types) -> accepted_types:
+        # FIXME: we don't pay capital gains tax on amounts added per month
         first_savings = np.array(monthly_savings)[0]
         excess_savings = monthly_savings - first_savings
         negative_excess = np.minimum(excess_savings, 0)
