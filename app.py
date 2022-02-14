@@ -50,15 +50,7 @@ def response(request_data):
         for probability in [0.5, 0.75, 1]
     }
 
-    def evolution_months(evolution):
-        (success_indices,) = np.where(evolution >= user.goal_price)
-        return (success_indices[0] + 1) if len(success_indices) > 0 else None
-
-    def evolution_years(evolution):
-        months = evolution_months(evolution)
-        return int((months + 11) / 12) if months is not None else None
-
-    num_relevant_months = evolution_months(strata[1])
+    num_relevant_months = evolution_months(strata[1], goal_price=user.goal_price)
     if num_relevant_months is None:
         num_relevant_months = max_months
 
@@ -71,13 +63,13 @@ def response(request_data):
         "strata": [
             {
                 "probability": probability,
-                "num_years": evolution_years(evolution),
+                "num_years": evolution_years(evolution, goal_price=user.goal_price),
                 "evolution": list(evolution[:num_relevant_months]),
             }
             for probability, evolution in strata.items()
         ],
         "bank_variant": {
-            "num_years": evolution_years(bank_evolution),
+            "num_years": evolution_years(bank_evolution, goal_price=user.goal_price),
             "evolution": list(bank_evolution),
         },
         "example_evolutions": [
@@ -111,3 +103,13 @@ def response(request_data):
             },
         ],
     }
+
+
+def evolution_months(evolution, goal_price):
+    (success_indices,) = np.where(evolution >= goal_price)
+    return (success_indices[0] + 1) if len(success_indices) > 0 else None
+
+
+def evolution_years(evolution, goal_price):
+    months = evolution_months(evolution, goal_price=goal_price)
+    return int((months + 11) / 12) if months is not None else None
