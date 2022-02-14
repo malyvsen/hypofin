@@ -61,8 +61,8 @@ class BalancedPortfolio(Portfolio):
             component.weight
             * component.quantile(
                 num_steps=num_steps,
-                start_amount=start_amount,
-                added_per_step=added_per_step,
+                start_amount=start_amount * component.weight,
+                added_per_step=added_per_step * component.weight,
                 quantile=quantile,
                 precision=precision,
             )
