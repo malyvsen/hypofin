@@ -22,7 +22,7 @@ def bank_portfolio():
 
 
 def monthly_inflation():
-    annual_to_monthly(data.euro_inflation())
+    return annual_to_monthly(data.euro_inflation())
 
 
 def annual_to_monthly(annual_return: float) -> float:

@@ -59,7 +59,7 @@ class BalancedPortfolio(Portfolio):
     ) -> np.ndarray:
         return sum(
             component.weight
-            * component.quantile(
+            * component.portfolio.quantile(
                 num_steps=num_steps,
                 start_amount=start_amount * component.weight,
                 added_per_step=added_per_step * component.weight,

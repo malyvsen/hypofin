@@ -15,7 +15,10 @@ app = Chalice(app_name="hypofin")
 
 @app.route("/", methods=["POST"], cors=True)
 def index():
-    request_data = app.current_request.json_body
+    return response(app.current_request.json_body)
+
+
+def response(request_data):
     user = User(
         current_savings=request_data["current_savings"],
         monthly_savings=request_data["monthly_savings"],
@@ -46,6 +49,14 @@ def index():
         )
         for probability in [0.5, 0.75, 1]
     }
+
+    def evolution_months(evolution):
+        (success_indices,) = np.where(evolution >= user.goal_price)
+        return (success_indices[0] + 1) if len(success_indices) > 0 else None
+
+    def evolution_years(evolution):
+        months = evolution_months(evolution)
+        return int((months + 11) / 12) if months is not None else None
 
     num_relevant_months = evolution_months(strata[1])
     if num_relevant_months is None:
@@ -100,13 +111,3 @@ def index():
             },
         ],
     }
-
-
-def evolution_months(evolution):
-    success_indices = np.where(evolution >= user.goal_price)
-    return (success_indices[0] + 1) if len(success_indices) > 0 else None
-
-
-def evolution_years(evolution):
-    months = evolution_months(evolution)
-    return int((months + 11) / 12) if months is not None else None
