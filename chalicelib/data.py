@@ -27,7 +27,7 @@ def bond_yield() -> float:
     html = requests.get(
         "http://www.worldgovernmentbonds.com/country/united-states/"
     ).text
-    text = BeautifulSoup(html).text
+    text = BeautifulSoup(html, features="lxml").text
     text_percent = re.findall(
         "The United States 10Y Government Bond has a (\d+\.\d+)% yield.", text
     )[0]
