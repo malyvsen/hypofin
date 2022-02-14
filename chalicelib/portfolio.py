@@ -7,12 +7,12 @@ from typing import List
 
 @dataclass(frozen=True)
 class Portfolio:
-    def sample_returns(self, num_steps: int) -> np.NDArray:
+    def sample_returns(self, num_steps: int) -> np.ndarray:
         raise NotImplementedError()
 
     def sample_savings(
         self, num_steps: int, start_amount: float, added_per_step: float
-    ) -> np.NDArray:
+    ) -> np.ndarray:
         """
         A sequence of amount saved up, projected num_steps ahead
         The first element is already one step after the current situation
@@ -30,7 +30,7 @@ class Portfolio:
         added_per_step: float,
         quantile: float,
         precision=1024,
-    ) -> np.NDArray:
+    ) -> np.ndarray:
         raise NotImplementedError()
 
 
@@ -43,7 +43,7 @@ class BalancedPortfolio(Portfolio):
 
     components: List[Component]
 
-    def sample_returns(self, num_steps: int) -> np.NDArray:
+    def sample_returns(self, num_steps: int) -> np.ndarray:
         return sum(
             component.weight * component.portfolio.sample_returns(num_steps)
             for component in self.components
@@ -56,7 +56,7 @@ class BalancedPortfolio(Portfolio):
         added_per_step: float,
         quantile: float,
         precision=1024,
-    ) -> np.NDArray:
+    ) -> np.ndarray:
         return sum(
             component.weight
             * component.quantile(
@@ -74,7 +74,7 @@ class BalancedPortfolio(Portfolio):
 class RisklessPortfolio(Portfolio):
     return_per_step: float
 
-    def sample_returns(self, num_steps: int) -> np.NDArray:
+    def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.full(shape=num_steps, fill_value=self.return_per_step)
 
     def quantile(
@@ -84,7 +84,7 @@ class RisklessPortfolio(Portfolio):
         added_per_step: float,
         quantile: float,
         precision=1024,
-    ) -> np.NDArray:
+    ) -> np.ndarray:
         return self.sample_savings(
             num_steps=num_steps,
             start_amount=start_amount,
@@ -108,7 +108,7 @@ class RiskyPortfolio(Portfolio):
             )
         )
 
-    def sample_returns(self, num_steps: int) -> np.NDArray:
+    def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.exp(self.log_return_distribution.rvs(num_steps)) - 1
 
     def quantile(
@@ -118,7 +118,7 @@ class RiskyPortfolio(Portfolio):
         added_per_step: float,
         quantile: float,
         precision=1024,
-    ) -> np.NDArray:
+    ) -> np.ndarray:
         if quantile == 0:
             return np.full(shape=num_steps, fill_value=added_per_step)
         return np.quantile(
