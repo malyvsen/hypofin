@@ -1,6 +1,13 @@
 from chalice import Chalice
 import numpy as np
-from chalicelib import User, tax_systems
+from chalicelib import (
+    BalancedPortfolio,
+    bank_portfolio,
+    bond_portfolio,
+    stock_portfolio,
+    tax_systems,
+    User,
+)
 
 
 app = Chalice(app_name="hypofin")
@@ -14,42 +21,67 @@ def index():
         monthly_savings=request_data["monthly_savings"],
         goal_price=request_data["goal_price"],
         risk_preference=request_data["risk_preference"],
-        tax_system=tax_systems["poland"],
-    )
-    num_steps = 256
-    sure_evolution = np.linspace(
-        request_data["current_savings"], request_data["goal_price"], num=num_steps
-    )
-    risk_growth = np.cumprod(
-        np.full(shape=num_steps, fill_value=1 + request_data["risk_preference"] * 1e-4)
+        tax_system=tax_systems[request_data["tax_system"]],
     )
     stock_allocation = user.risk_preference / 100
+    portfolio = BalancedPortfolio(
+        [
+            BalancedPortfolio.Component(
+                weight=1 - stock_allocation, portfolio=bond_portfolio()
+            ),
+            BalancedPortfolio.Component(
+                weight=stock_allocation, portfolio=stock_portfolio()
+            ),
+        ]
+    )
+    max_months = 50 * 12
+    strata = {
+        probability: portfolio.quantile(
+            num_steps=max_months,
+            start_amount=user.current_savings,
+            added_per_step=user.monthly_savings,
+            quantile=1 - probability,
+        )
+        for probability in [0.5, 0.75, 1]
+    }
+
+    def evolution_months(evolution):
+        success_indices = np.where(evolution >= user.goal_price)
+        return (success_indices[0] + 1) if len(success_indices) > 0 else None
+
+    def evolution_years(evolution):
+        months = evolution_months(evolution)
+        return int((months + 11) / 12) if months is not None else None
+
+    num_relevant_months = evolution_months(strata[1])
+    if num_relevant_months is None:
+        num_relevant_months = max_months
+
+    bank_evolution = bank_portfolio().sample_savings(
+        num_steps=num_relevant_months,
+        start_amount=user.current_savings,
+        added_per_step=user.monthly_savings,
+    )
     return {
         "strata": [
             {
-                "probability": 0.5,
-                "num_years": 7,
-                "evolution": list(sure_evolution * risk_growth),
-            },
-            {
-                "probability": 0.75,
-                "num_years": 13,
-                "evolution": list(sure_evolution * risk_growth**0.5),
-            },
-            {
-                "probability": 1,
-                "num_years": 17,
-                "evolution": list(sure_evolution),
-            },
+                "probability": probability,
+                "num_years": evolution_years(evolution),
+                "evolution": list(evolution[:num_relevant_months]),
+            }
+            for probability, evolution in strata.items()
         ],
         "bank_variant": {
-            "num_years": 14,
-            "evolution": list(sure_evolution * risk_growth**0.25),
+            "num_years": evolution_years(bank_evolution),
+            "evolution": list(bank_evolution),
         },
         "example_evolutions": [
             list(
-                request_data["current_savings"]
-                * np.cumprod(np.random.uniform(0.95, 1.1, size=256))
+                portfolio.sample_savings(
+                    num_steps=num_relevant_months,
+                    start_amount=user.current_savings,
+                    added_per_step=user.monthly_savings,
+                )
             )
             for _ in range(64)
         ],
