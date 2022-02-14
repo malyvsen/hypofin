@@ -36,4 +36,4 @@ def bond_yield() -> float:
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def stock_prices() -> pd.Series:
-    return yf.Ticker("^GSPC").history(period="max", interval="1m")["Close"]
+    return yf.Ticker("^GSPC").history(period="max", interval="1mo")["Close"]
