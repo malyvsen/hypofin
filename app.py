@@ -36,22 +36,16 @@ def index():
     )
     max_months = 50 * 12
     strata = {
-        probability: portfolio.quantile(
-            num_steps=max_months,
-            start_amount=user.current_savings,
-            added_per_step=user.monthly_savings,
-            quantile=1 - probability,
+        probability: user.tax_system.tax_savings(
+            portfolio.quantile(
+                num_steps=max_months,
+                start_amount=user.current_savings,
+                added_per_step=user.monthly_savings,
+                quantile=1 - probability,
+            )
         )
         for probability in [0.5, 0.75, 1]
     }
-
-    def evolution_months(evolution):
-        success_indices = np.where(evolution >= user.goal_price)
-        return (success_indices[0] + 1) if len(success_indices) > 0 else None
-
-    def evolution_years(evolution):
-        months = evolution_months(evolution)
-        return int((months + 11) / 12) if months is not None else None
 
     num_relevant_months = evolution_months(strata[1])
     if num_relevant_months is None:
@@ -77,10 +71,12 @@ def index():
         },
         "example_evolutions": [
             list(
-                portfolio.sample_savings(
-                    num_steps=num_relevant_months,
-                    start_amount=user.current_savings,
-                    added_per_step=user.monthly_savings,
+                user.tax_system.tax_savings(
+                    portfolio.sample_savings(
+                        num_steps=num_relevant_months,
+                        start_amount=user.current_savings,
+                        added_per_step=user.monthly_savings,
+                    )
                 )
             )
             for _ in range(64)
@@ -104,3 +100,13 @@ def index():
             },
         ],
     }
+
+
+def evolution_months(evolution):
+    success_indices = np.where(evolution >= user.goal_price)
+    return (success_indices[0] + 1) if len(success_indices) > 0 else None
+
+
+def evolution_years(evolution):
+    months = evolution_months(evolution)
+    return int((months + 11) / 12) if months is not None else None
