@@ -33,7 +33,7 @@ def bond_yield() -> float:
     ).text
     text = BeautifulSoup(html, features="lxml").text
     text_percent = re.findall(
-        "The United States 10Y Government Bond has a (\d+\.\d+)% yield.", text
+        "The United States 10Y Government Bond has a (\\d+\\.\\d+)% yield.", text
     )[0]
     return float(text_percent) / 100
 
