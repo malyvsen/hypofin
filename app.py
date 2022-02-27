@@ -1,7 +1,7 @@
 from chalice import Chalice
 import numpy as np
 from chalicelib import (
-    BalancedPortfolio,
+    MixedPortfolio,
     bank_portfolio,
     bond_portfolio,
     stock_portfolio,
@@ -27,25 +27,21 @@ def response(request_data):
         tax_system=tax_systems[request_data["tax_system"]],
     )
     stock_allocation = user.risk_preference / 100
-    portfolio = BalancedPortfolio(
-        [
-            BalancedPortfolio.Component(
-                weight=1 - stock_allocation, portfolio=bond_portfolio()
-            ),
-            BalancedPortfolio.Component(
-                weight=stock_allocation, portfolio=stock_portfolio()
-            ),
-        ]
+    portfolio = MixedPortfolio(
+        riskless_component=MixedPortfolio.Component(
+            weight=1 - stock_allocation, portfolio=bond_portfolio()
+        ),
+        risky_component=MixedPortfolio.Component(
+            weight=stock_allocation, portfolio=stock_portfolio()
+        ),
     )
     max_months = 50 * 12
     strata = {
         probability: user.tax_system.tax_savings(
-            portfolio.quantile(
-                num_steps=max_months,
-                start_amount=user.current_savings,
-                added_per_step=user.monthly_savings,
-                quantile=1 - probability,
-            )
+            monthly_savings=portfolio.savings_quantile(
+                additions=user.monthly_additions(max_months), quantile=1 - probability
+            ),
+            monthly_additions=user.monthly_additions(max_months),
         )
         for probability in [0.5, 0.75, 1]
     }
@@ -55,9 +51,7 @@ def response(request_data):
         num_relevant_months = max_months
 
     bank_evolution = bank_portfolio().sample_savings(
-        num_steps=num_relevant_months,
-        start_amount=user.current_savings,
-        added_per_step=user.monthly_savings,
+        additions=user.monthly_additions(max_months)
     )
     return {
         "strata": [
@@ -70,16 +64,15 @@ def response(request_data):
         ],
         "bank_variant": {
             "num_years": evolution_years(bank_evolution, goal_price=user.goal_price),
-            "evolution": list(bank_evolution),
+            "evolution": list(bank_evolution[:num_relevant_months]),
         },
         "example_evolutions": [
             list(
                 user.tax_system.tax_savings(
-                    portfolio.sample_savings(
-                        num_steps=num_relevant_months,
-                        start_amount=user.current_savings,
-                        added_per_step=user.monthly_savings,
-                    )
+                    monthly_savings=portfolio.sample_savings(
+                        additions=user.monthly_additions(num_relevant_months)
+                    ),
+                    monthly_additions=user.monthly_additions(num_relevant_months),
                 )
             )
             for _ in range(64)

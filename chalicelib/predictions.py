@@ -2,6 +2,7 @@ import chalicelib.data as data
 from .portfolio import RisklessPortfolio, RiskyPortfolio
 
 
+# TODO: inflation shouldn't be included here - it should be applied post-tax
 def bond_portfolio():
     return RisklessPortfolio(
         return_per_step=(1 + annual_to_monthly(data.bond_yield()))

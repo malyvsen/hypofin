@@ -15,9 +15,13 @@ def global_cape_ratio() -> float:
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def euro_inflation() -> float:
-    text_percent = pd.read_html(
-        "https://www.rateinflation.com/inflation-rate/euro-area-historical-inflation-rate/"
-    )[0]["Annual"].dropna()[0]
+    text_percent = (
+        pd.read_html(
+            "https://www.rateinflation.com/inflation-rate/euro-area-historical-inflation-rate/"
+        )[0]["Annual"]
+        .dropna()
+        .iloc[0]
+    )
     assert text_percent[-1] == "%"
     return float(text_percent[:-1]) / 100
 

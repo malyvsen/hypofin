@@ -10,24 +10,14 @@ class Portfolio:
     def sample_returns(self, num_steps: int) -> np.ndarray:
         raise NotImplementedError()
 
-    def sample_savings(
-        self, num_steps: int, start_amount: float, added_per_step: float
-    ) -> np.ndarray:
-        """
-        A sequence of amount saved up, projected num_steps ahead
-        The first element is already one step after the current situation
-        """
-        cumulative_growth = np.cumprod(1 + self.sample_returns(num_steps))
-        start_amount_growth = start_amount * cumulative_growth
-        added = np.full(shape=num_steps, fill_value=added_per_step)
-        added_growth = np.cumsum(added / cumulative_growth) * cumulative_growth
-        return start_amount_growth + added_growth
+    def sample_savings(self, additions: np.ndarray) -> np.ndarray:
+        """A sequence of amounts saved up, given the additions[step_id] is added at that step"""
+        cumulative_growth = np.cumprod(1 + self.sample_returns(len(additions)))
+        return np.cumsum(additions / cumulative_growth) * cumulative_growth
 
-    def quantile(
+    def savings_quantile(
         self,
-        num_steps: int,
-        start_amount: float,
-        added_per_step: float,
+        additions: np.ndarray,
         quantile: float,
         precision=1024,
     ) -> np.ndarray:
@@ -35,34 +25,39 @@ class Portfolio:
 
 
 @dataclass(frozen=True)
-class BalancedPortfolio(Portfolio):
+class MixedPortfolio(Portfolio):
     @dataclass(frozen=True)
     class Component:
         weight: float
         portfolio: Portfolio
 
-    components: List[Component]
+    riskless_component: Component
+    risky_component: Component
 
-    def sample_returns(self, num_steps: int) -> np.ndarray:
+    def __post_init__(self):
+        assert np.isclose(sum(component.weight for component in self.components), 1)
+        assert isinstance(self.riskless_component.portfolio, RisklessPortfolio)
+        assert isinstance(self.risky_component.portfolio, RiskyPortfolio)
+
+    @property
+    def components(self) -> List[Component]:
+        return [self.riskless_component, self.risky_component]
+
+    def sample_savings(self, additions: np.ndarray) -> np.ndarray:
         return sum(
-            component.weight * component.portfolio.sample_returns(num_steps)
+            component.portfolio.sample_savings(additions=additions * component.weight)
             for component in self.components
         )
 
-    def quantile(
+    def savings_quantile(
         self,
-        num_steps: int,
-        start_amount: float,
-        added_per_step: float,
+        additions: np.ndarray,
         quantile: float,
         precision=1024,
     ) -> np.ndarray:
         return sum(
-            component.weight
-            * component.portfolio.quantile(
-                num_steps=num_steps,
-                start_amount=start_amount * component.weight,
-                added_per_step=added_per_step * component.weight,
+            component.portfolio.savings_quantile(
+                additions=additions * component.weight,
                 quantile=quantile,
                 precision=precision,
             )
@@ -77,19 +72,13 @@ class RisklessPortfolio(Portfolio):
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.full(shape=num_steps, fill_value=self.return_per_step)
 
-    def quantile(
+    def savings_quantile(
         self,
-        num_steps: int,
-        start_amount: float,
-        added_per_step: float,
+        additions: np.ndarray,
         quantile: float,
-        precision=1024,
+        precision=None,
     ) -> np.ndarray:
-        return self.sample_savings(
-            num_steps=num_steps,
-            start_amount=start_amount,
-            added_per_step=added_per_step,
-        )
+        return self.sample_savings(additions=additions)
 
 
 @dataclass(frozen=True)
@@ -111,23 +100,17 @@ class RiskyPortfolio(Portfolio):
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.exp(self.log_return_distribution.rvs(num_steps)) - 1
 
-    def quantile(
+    def savings_quantile(
         self,
-        num_steps: int,
-        start_amount: float,
-        added_per_step: float,
+        additions: np.ndarray,
         quantile: float,
         precision=1024,
     ) -> np.ndarray:
         if quantile == 0:
-            return np.full(shape=num_steps, fill_value=added_per_step)
+            return additions
         return np.quantile(
             [
-                self.sample_savings(
-                    num_steps=num_steps,
-                    start_amount=start_amount,
-                    added_per_step=added_per_step,
-                )
+                self.sample_savings(additions=additions)
                 for simulation in range(precision)
             ],
             q=quantile,
