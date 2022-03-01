@@ -3,21 +3,18 @@ import chalicelib.data as data
 from .portfolio import RisklessPortfolio, RiskyPortfolio
 
 
-# TODO: inflation shouldn't be included here - it should be applied post-tax
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def bond_portfolio():
-    return RisklessPortfolio(
-        return_per_step=(1 + annual_to_monthly(data.bond_yield()))
-        / (1 + monthly_inflation())
-        - 1
-    )
+    return RisklessPortfolio(return_per_step=annual_to_monthly(data.bond_yield()))
 
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def stock_portfolio():
     return RiskyPortfolio.from_historical_prices(
         historical_prices=data.stock_prices(),
-        expected_return=1 / data.global_cape_ratio(),
+        expected_return=(1 + annual_to_monthly(1 / data.global_cape_ratio()))
+        * (1 + monthly_inflation())
+        - 1,
     )
 
 
