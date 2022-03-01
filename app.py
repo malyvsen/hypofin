@@ -1,5 +1,4 @@
 from chalice import Chalice
-import numpy as np
 from chalicelib import (
     MixedPortfolio,
     bank_portfolio,
@@ -8,6 +7,7 @@ from chalicelib import (
     tax_systems,
     User,
 )
+import numpy as np
 
 
 app = Chalice(app_name="hypofin")
@@ -26,6 +26,7 @@ def response(request_data):
         risk_preference=request_data["risk_preference"],
         tax_system=tax_systems[request_data["tax_system"]],
     )
+
     stock_allocation = user.risk_preference / 100
     portfolio = MixedPortfolio(
         riskless_component=MixedPortfolio.Component(
@@ -35,10 +36,11 @@ def response(request_data):
             weight=stock_allocation, portfolio=stock_portfolio()
         ),
     )
+
     max_months = 50 * 12
     strata = {
         probability: user.tax_system.tax_savings(
-            monthly_savings=portfolio.savings_quantile(
+            monthly_savings=portfolio.savings_quantile_cached(
                 additions=user.monthly_additions(max_months), quantile=1 - probability
             ),
             monthly_additions=user.monthly_additions(max_months),

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import lru_cache
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -15,11 +16,29 @@ class Portfolio:
         cumulative_growth = np.cumprod(1 + self.sample_returns(len(additions)))
         return np.cumsum(additions / cumulative_growth) * cumulative_growth
 
-    def savings_quantile(
+    def savings_quantile_cached(
         self,
         additions: np.ndarray,
         quantile: float,
         precision=1024,
+    ) -> np.ndarray:
+        return self._savings_quantile_cached(
+            additions=tuple(additions), quantile=quantile, precision=precision
+        )
+
+    @lru_cache(maxsize=64)
+    def _savings_quantile_cached(
+        self, additions: tuple, quantile: float, precision: int
+    ):
+        return self.savings_quantile(
+            additions=np.array(additions), quantile=quantile, precision=precision
+        )
+
+    def savings_quantile(
+        self,
+        additions: np.ndarray,
+        quantile: float,
+        precision: int,
     ) -> np.ndarray:
         raise NotImplementedError()
 
@@ -53,7 +72,7 @@ class MixedPortfolio(Portfolio):
         self,
         additions: np.ndarray,
         quantile: float,
-        precision=1024,
+        precision: int,
     ) -> np.ndarray:
         return sum(
             component.portfolio.savings_quantile(
@@ -76,7 +95,7 @@ class RisklessPortfolio(Portfolio):
         self,
         additions: np.ndarray,
         quantile: float,
-        precision=None,
+        precision: int,
     ) -> np.ndarray:
         return self.sample_savings(additions=additions)
 
@@ -104,7 +123,7 @@ class RiskyPortfolio(Portfolio):
         self,
         additions: np.ndarray,
         quantile: float,
-        precision=1024,
+        precision: int,
     ) -> np.ndarray:
         if quantile == 0:
             return additions
