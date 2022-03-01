@@ -5,6 +5,8 @@ import pandas as pd
 import scipy.stats
 from typing import List
 
+from .config import precision
+
 
 @dataclass(frozen=True)
 class Portfolio:
@@ -20,25 +22,19 @@ class Portfolio:
         self,
         additions: np.ndarray,
         quantile: float,
-        precision=1024,
     ) -> np.ndarray:
         return self._savings_quantile_cached(
-            additions=tuple(additions), quantile=quantile, precision=precision
+            additions=tuple(additions), quantile=quantile
         )
 
     @lru_cache(maxsize=64)
-    def _savings_quantile_cached(
-        self, additions: tuple, quantile: float, precision: int
-    ):
-        return self.savings_quantile(
-            additions=np.array(additions), quantile=quantile, precision=precision
-        )
+    def _savings_quantile_cached(self, additions: tuple, quantile: float):
+        return self.savings_quantile(additions=np.array(additions), quantile=quantile)
 
     def savings_quantile(
         self,
         additions: np.ndarray,
         quantile: float,
-        precision: int,
     ) -> np.ndarray:
         raise NotImplementedError()
 
@@ -72,13 +68,11 @@ class MixedPortfolio(Portfolio):
         self,
         additions: np.ndarray,
         quantile: float,
-        precision: int,
     ) -> np.ndarray:
         return sum(
             component.portfolio.savings_quantile(
                 additions=additions * component.weight,
                 quantile=quantile,
-                precision=precision,
             )
             for component in self.components
         )
@@ -95,7 +89,6 @@ class RisklessPortfolio(Portfolio):
         self,
         additions: np.ndarray,
         quantile: float,
-        precision: int,
     ) -> np.ndarray:
         return self.sample_savings(additions=additions)
 
@@ -123,7 +116,6 @@ class RiskyPortfolio(Portfolio):
         self,
         additions: np.ndarray,
         quantile: float,
-        precision: int,
     ) -> np.ndarray:
         if quantile == 0:
             return additions

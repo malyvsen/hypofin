@@ -1,9 +1,5 @@
 from chalice import Chalice
 from chalicelib import (
-    MixedPortfolio,
-    bank_portfolio,
-    bond_portfolio,
-    stock_portfolio,
     tax_systems,
     User,
 )
@@ -27,23 +23,11 @@ def response(request_data):
         tax_system=tax_systems[request_data["tax_system"]],
     )
 
-    stock_allocation = user.risk_preference / 100
-    portfolio = MixedPortfolio(
-        riskless_component=MixedPortfolio.Component(
-            weight=1 - stock_allocation, portfolio=bond_portfolio()
-        ),
-        risky_component=MixedPortfolio.Component(
-            weight=stock_allocation, portfolio=stock_portfolio()
-        ),
-    )
-
     max_months = 50 * 12
+    bank_evolution = user.bank_savings(num_months=max_months)
     strata = {
-        probability: user.tax_system.tax_savings(
-            monthly_savings=portfolio.savings_quantile_cached(
-                additions=user.monthly_additions(max_months), quantile=1 - probability
-            ),
-            monthly_additions=user.monthly_additions(max_months),
+        probability: user.savings_quantile_cached(
+            num_months=max_months, quantile=1 - probability
         )
         for probability in [0.5, 0.75, 1]
     }
@@ -52,9 +36,6 @@ def response(request_data):
     if num_relevant_months is None:
         num_relevant_months = max_months
 
-    bank_evolution = bank_portfolio().sample_savings(
-        additions=user.monthly_additions(max_months)
-    )
     return {
         "strata": [
             {
@@ -70,8 +51,8 @@ def response(request_data):
         },
         "example_evolutions": [
             list(
-                user.tax_system.tax_savings(
-                    monthly_savings=portfolio.sample_savings(
+                user.apply_losses(
+                    monthly_savings=user.portfolio.sample_savings(
                         additions=user.monthly_additions(num_relevant_months)
                     ),
                     monthly_additions=user.monthly_additions(num_relevant_months),
@@ -83,18 +64,18 @@ def response(request_data):
             {
                 "name": "Amundi ETF J.P. Morgan GBI Global Government Bonds UCITS ETF DR",
                 "isin": " LU1437016204",
-                "current_fraction": 1 - stock_allocation,
-                "current_amount": user.current_savings * (1 - stock_allocation),
-                "monthly_fraction": 1 - stock_allocation,
-                "monthly_amount": user.current_savings * (1 - stock_allocation),
+                "current_fraction": user.bond_allocation,
+                "current_amount": user.current_savings * user.bond_allocation,
+                "monthly_fraction": user.bond_allocation,
+                "monthly_amount": user.current_savings * user.bond_allocation,
             },
             {
                 "name": "Lyxor Core MSCI World (DR) UCITS ETF - Acc",
                 "isin": "LU1781541179",
-                "current_fraction": stock_allocation,
-                "current_amount": user.current_savings * stock_allocation,
-                "monthly_fraction": stock_allocation,
-                "monthly_amount": user.current_savings * stock_allocation,
+                "current_fraction": user.stock_allocation,
+                "current_amount": user.current_savings * user.stock_allocation,
+                "monthly_fraction": user.stock_allocation,
+                "monthly_amount": user.current_savings * user.stock_allocation,
             },
         ],
     }

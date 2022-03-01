@@ -1,5 +1,6 @@
 from cachetools import cached, TTLCache
 import chalicelib.data as data
+
 from .portfolio import RisklessPortfolio, RiskyPortfolio
 
 
@@ -16,11 +17,6 @@ def stock_portfolio():
         * (1 + monthly_inflation())
         - 1,
     )
-
-
-@cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
-def bank_portfolio():
-    return RisklessPortfolio(return_per_step=1 / (1 + monthly_inflation()) - 1)
 
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
