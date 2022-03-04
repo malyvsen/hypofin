@@ -6,7 +6,9 @@ from .portfolio import RisklessPortfolio, RiskyPortfolio
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def bond_portfolio():
-    return RisklessPortfolio(return_per_step=annual_to_monthly(data.bond_yield()))
+    return RisklessPortfolio(
+        return_per_step=annual_to_monthly(data.bond_yield("germany"))
+    )
 
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
@@ -22,6 +24,12 @@ def stock_portfolio():
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def monthly_inflation():
     return annual_to_monthly(data.euro_inflation())
+
+
+@cached(cache=TTLCache(maxsize=16, ttl=24 * 60 * 60))
+def monthly_default_probability(country: str):
+    five_year = data.default_probability(country)
+    return 1 - (1 - five_year) ** (1 / 12 / 5)
 
 
 def annual_to_monthly(annual_return: float) -> float:

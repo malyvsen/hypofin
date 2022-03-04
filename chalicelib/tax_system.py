@@ -41,9 +41,3 @@ class WealthTaxSystem(TaxSystem):
             np.cumsum(monthly_additions / cumulative_taxed_growth)
             * cumulative_taxed_growth
         )
-
-
-tax_systems = {
-    "poland": CapitalGainsTaxSystem(tax=0.19),
-    "netherlands": WealthTaxSystem(tax=0.012),
-}

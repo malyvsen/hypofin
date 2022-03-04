@@ -1,6 +1,6 @@
 from chalice import Chalice
 from chalicelib import (
-    tax_systems,
+    countries,
     User,
 )
 import numpy as np
@@ -20,20 +20,28 @@ def response(request_data):
         monthly_savings=request_data["monthly_savings"],
         goal_price=request_data["goal_price"],
         risk_preference=request_data["risk_preference"],
-        tax_system=tax_systems[request_data["tax_system"]],
+        country=countries[request_data["country"]],
     )
 
     max_months = 50 * 12
     bank_evolution = user.bank_savings(num_months=max_months)
+    num_bank_months = evolution_months(bank_evolution, goal_price=user.goal_price)
+    bank_default_probability = user.country.default_probability(
+        num_months=num_bank_months or max_months
+    )
     strata = {
         probability: user.savings_quantile_cached(
             num_months=max_months, quantile=1 - probability
         )
-        for probability in [0.5, 0.75, 1]
+        for probability in [0.5, 0.75, 1 - bank_default_probability]
     }
 
-    num_relevant_months = evolution_months(strata[1], goal_price=user.goal_price)
-    if num_relevant_months is None:
+    try:
+        num_relevant_months = max(
+            evolution_months(evolution, goal_price=user.goal_price)
+            for evolution in strata.values()
+        )
+    except TypeError:
         num_relevant_months = max_months
 
     return {
@@ -46,6 +54,7 @@ def response(request_data):
             for probability, evolution in strata.items()
         ],
         "bank_variant": {
+            "probability": 1 - bank_default_probability,
             "num_years": evolution_years(bank_evolution, goal_price=user.goal_price),
             "evolution": list(bank_evolution[:num_relevant_months]),
         },

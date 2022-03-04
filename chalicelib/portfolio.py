@@ -117,8 +117,6 @@ class RiskyPortfolio(Portfolio):
         additions: np.ndarray,
         quantile: float,
     ) -> np.ndarray:
-        if quantile == 0:
-            return additions
         return np.quantile(
             [
                 self.sample_savings(additions=additions)

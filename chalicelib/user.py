@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 import numpy as np
 
+from .country import Country
 from .portfolio import MixedPortfolio
 from .predictions import bond_portfolio, stock_portfolio, monthly_inflation
-from .tax_system import TaxSystem
 
 
 @dataclass(frozen=True)
@@ -12,7 +12,7 @@ class User:
     monthly_savings: float
     goal_price: float
     risk_preference: float
-    tax_system: TaxSystem
+    country: Country
 
     @property
     def portfolio(self):
@@ -42,7 +42,7 @@ class User:
         return self.apply_losses(pre_tax, monthly_additions=additions)
 
     def apply_losses(self, monthly_savings: np.ndarray, monthly_additions: np.ndarray):
-        post_tax = self.tax_system.tax_savings(
+        post_tax = self.country.tax_system.tax_savings(
             monthly_savings=monthly_savings,
             monthly_additions=monthly_additions,
         )
