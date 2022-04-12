@@ -30,7 +30,7 @@ def response(request_data):
         num_months=num_bank_months or max_months
     )
     strata = {
-        probability: user.savings_quantile_cached(
+        probability: user.savings_quantile(
             num_months=max_months, quantile=1 - probability
         )
         for probability in [0.5, 0.75, 1 - bank_default_probability]

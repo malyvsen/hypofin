@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from functools import lru_cache
 import numpy as np
 import pandas as pd
-import scipy.stats
 from typing import List
 
-from .config import precision
+from .config import num_trajectories_for_quantile, num_example_returns
 
 
 @dataclass(frozen=True)
@@ -14,66 +12,42 @@ class Portfolio:
         raise NotImplementedError()
 
     def sample_savings(self, additions: np.ndarray) -> np.ndarray:
-        """A sequence of amounts saved up, given the additions[step_id] is added at that step"""
+        """A sequence of amounts saved up, given that additions[step_id] is added at that step"""
         cumulative_growth = np.cumprod(1 + self.sample_returns(len(additions)))
         return np.cumsum(additions / cumulative_growth) * cumulative_growth
-
-    def savings_quantile_cached(
-        self,
-        additions: np.ndarray,
-        quantile: float,
-    ) -> np.ndarray:
-        return self._savings_quantile_cached(
-            additions=tuple(additions), quantile=quantile
-        )
-
-    @lru_cache(maxsize=64)
-    def _savings_quantile_cached(self, additions: tuple, quantile: float):
-        return self.savings_quantile(additions=np.array(additions), quantile=quantile)
 
     def savings_quantile(
         self,
         additions: np.ndarray,
         quantile: float,
     ) -> np.ndarray:
-        raise NotImplementedError()
+        return np.quantile(
+            [
+                self.sample_savings(additions=additions)
+                for simulation in range(num_trajectories_for_quantile)
+            ],
+            q=quantile,
+            axis=0,
+        )
 
 
 @dataclass(frozen=True)
-class MixedPortfolio(Portfolio):
+class BalancedPortfolio(Portfolio):
+    """A portfolio which is rebalanced monthly"""
+
     @dataclass(frozen=True)
     class Component:
         weight: float
         portfolio: Portfolio
 
-    riskless_component: Component
-    risky_component: Component
+    components: List[Component]
 
     def __post_init__(self):
         assert np.isclose(sum(component.weight for component in self.components), 1)
-        assert isinstance(self.riskless_component.portfolio, RisklessPortfolio)
-        assert isinstance(self.risky_component.portfolio, RiskyPortfolio)
 
-    @property
-    def components(self) -> List[Component]:
-        return [self.riskless_component, self.risky_component]
-
-    def sample_savings(self, additions: np.ndarray) -> np.ndarray:
+    def sample_returns(self, num_steps: int) -> np.ndarray:
         return sum(
-            component.portfolio.sample_savings(additions=additions * component.weight)
-            for component in self.components
-        )
-
-    def savings_quantile(
-        self,
-        additions: np.ndarray,
-        quantile: float,
-    ) -> np.ndarray:
-        return sum(
-            component.portfolio.savings_quantile(
-                additions=additions * component.weight,
-                quantile=quantile,
-            )
+            component.portfolio.sample_returns(num_steps=num_steps) * component.weight
             for component in self.components
         )
 
@@ -85,43 +59,20 @@ class RisklessPortfolio(Portfolio):
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.full(shape=num_steps, fill_value=self.return_per_step)
 
-    def savings_quantile(
-        self,
-        additions: np.ndarray,
-        quantile: float,
-    ) -> np.ndarray:
-        return self.sample_savings(additions=additions)
-
 
 @dataclass(frozen=True)
 class RiskyPortfolio(Portfolio):
-    log_return_distribution: scipy.stats.rv_continuous
+    example_returns: np.ndarray
 
     @classmethod
     def from_historical_prices(
         cls, historical_prices: pd.Series, expected_return: float
     ):
-        historical_log_returns = np.log(historical_prices).diff().dropna()
-        loc, scale = scipy.stats.laplace.fit(historical_log_returns)
-        return cls(
-            log_return_distribution=scipy.stats.laplace(
-                np.log(1 + expected_return), scale
-            )
+        historical_returns = np.array(
+            historical_prices.pct_change(fill_method=None).dropna()
         )
+        kept_returns = historical_returns[:num_example_returns]
+        return cls(example_returns=kept_returns - kept_returns.mean() + expected_return)
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
-        return np.exp(self.log_return_distribution.rvs(num_steps)) - 1
-
-    def savings_quantile(
-        self,
-        additions: np.ndarray,
-        quantile: float,
-    ) -> np.ndarray:
-        return np.quantile(
-            [
-                self.sample_savings(additions=additions)
-                for simulation in range(precision)
-            ],
-            q=quantile,
-            axis=0,
-        )
+        return np.random.choice(self.example_returns, size=num_steps)

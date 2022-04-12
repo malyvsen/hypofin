@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .country import Country
-from .portfolio import MixedPortfolio
+from .portfolio import BalancedPortfolio
 from .predictions import bond_portfolio, stock_portfolio, monthly_inflation
 
 
@@ -16,13 +16,15 @@ class User:
 
     @property
     def portfolio(self):
-        return MixedPortfolio(
-            riskless_component=MixedPortfolio.Component(
-                weight=self.bond_allocation, portfolio=bond_portfolio()
-            ),
-            risky_component=MixedPortfolio.Component(
-                weight=self.stock_allocation, portfolio=stock_portfolio()
-            ),
+        return BalancedPortfolio(
+            components=[
+                BalancedPortfolio.Component(
+                    weight=self.bond_allocation, portfolio=bond_portfolio()
+                ),
+                BalancedPortfolio.Component(
+                    weight=self.stock_allocation, portfolio=stock_portfolio()
+                ),
+            ]
         )
 
     @property
@@ -33,10 +35,10 @@ class User:
     def stock_allocation(self):
         return self.risk_preference / 100
 
-    def savings_quantile_cached(self, num_months: int, quantile: float):
+    def savings_quantile(self, num_months: int, quantile: float):
         """The inflation-adjusted, taxed savings quantile"""
         additions = self.monthly_additions(num_months)
-        pre_tax = self.portfolio.savings_quantile_cached(
+        pre_tax = self.portfolio.savings_quantile(
             additions=additions, quantile=quantile
         )
         return self.apply_losses(pre_tax, monthly_additions=additions)
