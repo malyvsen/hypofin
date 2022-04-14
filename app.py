@@ -24,8 +24,8 @@ def response(request_data):
     )
 
     max_months = 50 * 12
-    bank_evolution = user.bank_savings(num_months=max_months)
-    num_bank_months = evolution_months(bank_evolution, goal_price=user.goal_price)
+    bank_trajectory = user.bank_savings(num_months=max_months)
+    num_bank_months = trajectory_months(bank_trajectory, goal_price=user.goal_price)
     bank_default_probability = user.country.default_probability(
         num_months=num_bank_months or max_months
     )
@@ -38,27 +38,40 @@ def response(request_data):
 
     try:
         num_relevant_months = max(
-            evolution_months(evolution, goal_price=user.goal_price)
-            for evolution in strata.values()
+            trajectory_months(trajectory, goal_price=user.goal_price)
+            for trajectory in strata.values()
         )
     except TypeError:
         num_relevant_months = max_months
 
     return {
-        "strata": [
+        "aggregate_trajectories": [
             {
+                "name": f"{probability * 100:.0f}% certainty",
+                "description": f"You have a {probability * 100:.0f}% chance of having this much or more money saved up, after tax."
+                + (
+                    ""
+                    if probability <= 0.75
+                    else " This is as much certainty as you get in a bank (those go bankrupt sometimes too)."
+                ),
                 "probability": probability,
-                "num_years": evolution_years(evolution, goal_price=user.goal_price),
-                "evolution": list(evolution[:num_relevant_months]),
+                "num_years": trajectory_years(trajectory, goal_price=user.goal_price),
+                "trajectory": list(trajectory[:num_relevant_months]),
             }
-            for probability, evolution in strata.items()
+            for probability, trajectory in strata.items()
+        ]
+        + [
+            {
+                "name": "Keeping your money in a bank",
+                "description": "For comparison, this is what it would look like if you kept your money on your bank account.",
+                "probability": 1 - bank_default_probability,
+                "num_years": trajectory_years(
+                    bank_trajectory, goal_price=user.goal_price
+                ),
+                "trajectory": list(bank_trajectory[:num_relevant_months]),
+            }
         ],
-        "bank_variant": {
-            "probability": 1 - bank_default_probability,
-            "num_years": evolution_years(bank_evolution, goal_price=user.goal_price),
-            "evolution": list(bank_evolution[:num_relevant_months]),
-        },
-        "example_evolutions": [
+        "example_trajectories": [
             list(
                 user.apply_losses(
                     monthly_savings=user.portfolio.sample_savings(
@@ -90,11 +103,11 @@ def response(request_data):
     }
 
 
-def evolution_months(evolution, goal_price):
-    (success_indices,) = np.where(evolution >= goal_price)
+def trajectory_months(trajectory, goal_price):
+    (success_indices,) = np.where(trajectory >= goal_price)
     return (success_indices[0] + 1) if len(success_indices) > 0 else None
 
 
-def evolution_years(evolution, goal_price):
-    months = evolution_months(evolution, goal_price=goal_price)
+def trajectory_years(trajectory, goal_price):
+    months = trajectory_months(trajectory, goal_price=goal_price)
     return int((months + 11) / 12) if months is not None else None

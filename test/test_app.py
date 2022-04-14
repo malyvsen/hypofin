@@ -10,11 +10,10 @@ def test_response_fields():
         "country": "netherlands",
     }
     test_me = response(payload)
-    assert len(test_me["strata"]) == 3
+    assert len(test_me["aggregate_trajectories"]) == 4
     assert set(test_me.keys()) == {
-        "strata",
-        "bank_variant",
-        "example_evolutions",
+        "aggregate_trajectories",
+        "example_trajectories",
         "allocation",
     }
 
