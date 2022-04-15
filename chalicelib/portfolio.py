@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from typing import List
 
-from .config import num_trajectories_for_quantile, num_example_returns
+from .config import num_trajectories_for_quantile
 
 
 @dataclass(frozen=True)
@@ -71,8 +71,11 @@ class RiskyPortfolio(Portfolio):
         historical_returns = np.array(
             historical_prices.pct_change(fill_method=None).dropna()
         )
-        kept_returns = historical_returns[:num_example_returns]
-        return cls(example_returns=kept_returns - kept_returns.mean() + expected_return)
+        return cls(
+            example_returns=historical_returns
+            - historical_returns.mean()
+            + expected_return
+        )
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.random.choice(self.example_returns, size=num_steps)
