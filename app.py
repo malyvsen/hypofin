@@ -57,10 +57,11 @@ def response(user: User, max_months=50 * 12):
         ),
         AggregateTrajectory.from_samples(
             scenario_id="worst_case",
-            name="As safe as in a bank",
+            name="System collapse scenario",
             description=(
                 f"Your savings will be above this line {(1 - default_probability) * 100:.1f}% of the time."
-                + " This is as safe as keeping your money in a bank - those go bankrupt sometimes too."
+                + " This number corresponds to the probability that your contry's banking system will stay afloat."
+                + " This means that the safety given by this scenario is as strong as what a bank can give you."
             ),
             samples=portfolio_trajectories,
             quantile=default_probability,
@@ -84,7 +85,7 @@ def response(user: User, max_months=50 * 12):
                 "num_years": trajectory.years_to_goal(user.goal_price),
                 "trajectory": list(trajectory.savings[:num_relevant_months]),
             }
-            for trajectory in [bank_trajectory] + quantile_trajectories
+            for trajectory in quantile_trajectories + [bank_trajectory]
         ],
         "example_trajectories": [
             list(trajectory.savings) for trajectory in portfolio_trajectories[:64]
