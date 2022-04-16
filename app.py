@@ -28,14 +28,14 @@ def response(user: User, max_months=50 * 12):
             "For comparison, this is what you would get on average if you kept your money in a bank account."
             + " We show your inflation-adjusted savings, so you can see inflation eating away at your money."
         ),
-        samples=[user.sample_bank_trajectory(max_months) for sample_idx in range(16)],
+        samples=[user.sample_bank_trajectory(max_months) for sample_idx in range(64)],
         quantile=0.5,
     )
     default_probability = user.country.default_probability(
         bank_trajectory.months_to_goal(user.goal_price) or max_months
     )
     portfolio_trajectories = [
-        user.sample_trajectory(max_months) for sample_idx in range(1024)
+        user.sample_trajectory(max_months) for sample_idx in range(256)
     ]
     quantile_trajectories = [
         AggregateTrajectory.from_samples(
