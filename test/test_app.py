@@ -25,7 +25,7 @@ def test_poland():
         monthly_savings=5,
         goal_price=230,
         current_savings=180,
-        country=countries["netherlands"],
+        country=countries["poland"],
     )
     test_me = response(user)
     assert len(test_me["aggregate_trajectories"]) == 4
