@@ -28,7 +28,7 @@ def response(user: User, max_months=50 * 12):
             "For comparison, this is what you would get on average if you kept your money in a bank account."
             + " We show your inflation-adjusted savings, so you can see inflation eating away at your money."
         ),
-        samples=[user.sample_bank_trajectory(max_months) for sample_idx in range(256)],
+        samples=[user.sample_bank_trajectory(max_months) for sample_idx in range(16)],
         quantile=0.5,
     )
     default_probability = user.country.default_probability(
