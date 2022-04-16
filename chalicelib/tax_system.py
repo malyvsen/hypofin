@@ -15,7 +15,9 @@ class CapitalGainsTaxSystem(TaxSystem):
     tax: float
 
     def apply(self, trajectory: ExplainedTrajectory) -> ExplainedTrajectory:
-        excess_savings = trajectory.savings - np.cumsum(trajectory.additions)
+        excess_savings = trajectory.savings - np.concatenate(
+            [[0], np.cumsum(trajectory.additions)]
+        )
         negative_excess = np.minimum(excess_savings, 0)
         positive_excess = np.maximum(excess_savings, 0)
         return ExplainedTrajectory.infer_returns(
