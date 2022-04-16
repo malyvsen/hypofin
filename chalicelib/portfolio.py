@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from typing import List
 
-from .config import num_trajectories_for_quantile
+from .trajectory import ExplainedTrajectory
 
 
 @dataclass(frozen=True)
@@ -11,29 +11,17 @@ class Portfolio:
     def sample_returns(self, num_steps: int) -> np.ndarray:
         raise NotImplementedError()
 
-    def sample_savings(self, additions: np.ndarray) -> np.ndarray:
-        """A sequence of amounts saved up, given that additions[step_id] is added at that step"""
-        cumulative_growth = np.cumprod(1 + self.sample_returns(len(additions)))
-        return np.cumsum(additions / cumulative_growth) * cumulative_growth
-
-    def savings_quantile(
-        self,
-        additions: np.ndarray,
-        quantile: float,
-    ) -> np.ndarray:
-        return np.quantile(
-            [
-                self.sample_savings(additions=additions)
-                for simulation in range(num_trajectories_for_quantile)
-            ],
-            q=quantile,
-            axis=0,
+    def sample_trajectory(self, start_amount: float, additions: np.ndarray):
+        return ExplainedTrajectory.infer_savings(
+            start_amount=start_amount,
+            additions=additions,
+            returns=self.sample_returns(num_steps=len(additions)),
         )
 
 
 @dataclass(frozen=True)
-class BalancedPortfolio(Portfolio):
-    """A portfolio which is rebalanced monthly"""
+class WeightedPortfolio(Portfolio):
+    """A weighted portfolio, rebalanced monthly"""
 
     @dataclass(frozen=True)
     class Component:
@@ -41,9 +29,6 @@ class BalancedPortfolio(Portfolio):
         portfolio: Portfolio
 
     components: List[Component]
-
-    def __post_init__(self):
-        assert np.isclose(sum(component.weight for component in self.components), 1)
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return sum(
@@ -79,3 +64,19 @@ class RiskyPortfolio(Portfolio):
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
         return np.random.choice(self.example_returns, size=num_steps)
+
+
+@dataclass(frozen=True)
+class InflationPortfolio(Portfolio):
+    future_predictions: np.ndarray
+    historical_inflation: np.ndarray
+
+    def sample_returns(self, num_steps: int) -> np.ndarray:
+        predicted_result = self.future_predictions[:num_steps]
+        historical_start = np.random.randint(low=0, high=len(self.historical_inflation))
+        historical_end = historical_start + num_steps - len(predicted_result)
+        historical_indices = np.arange(historical_start, historical_end) % len(
+            self.historical_inflation
+        )
+        historical_result = self.historical_inflation[historical_indices]
+        return np.concatenate([predicted_result, historical_result])

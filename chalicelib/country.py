@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .predictions import monthly_default_probability
+from .predictions import inflation, monthly_default_probability
 from .tax_system import TaxSystem, CapitalGainsTaxSystem, WealthTaxSystem
 
 
@@ -8,6 +8,10 @@ from .tax_system import TaxSystem, CapitalGainsTaxSystem, WealthTaxSystem
 class Country:
     name: str
     tax_system: TaxSystem
+
+    @property
+    def inflation(self):
+        return inflation(self.name)
 
     def default_probability(self, num_months: float):
         monthly = monthly_default_probability(self.name)

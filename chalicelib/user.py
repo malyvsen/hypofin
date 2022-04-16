@@ -2,8 +2,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from .country import Country
-from .portfolio import BalancedPortfolio
-from .predictions import bond_portfolio, stock_portfolio, monthly_inflation
+from .predictions import bond_portfolio, stock_premium_portfolio
+from .trajectory import ExplainedTrajectory
 
 
 @dataclass(frozen=True)
@@ -15,19 +15,6 @@ class User:
     country: Country
 
     @property
-    def portfolio(self):
-        return BalancedPortfolio(
-            components=[
-                BalancedPortfolio.Component(
-                    weight=self.bond_allocation, portfolio=bond_portfolio()
-                ),
-                BalancedPortfolio.Component(
-                    weight=self.stock_allocation, portfolio=stock_portfolio()
-                ),
-            ]
-        )
-
-    @property
     def bond_allocation(self):
         return 1 - self.stock_allocation
 
@@ -35,31 +22,40 @@ class User:
     def stock_allocation(self):
         return self.risk_preference / 100
 
-    def savings_quantile(self, num_months: int, quantile: float):
-        """The inflation-adjusted, taxed savings quantile"""
-        additions = self.monthly_additions(num_months)
-        pre_tax = self.portfolio.savings_quantile(
-            additions=additions, quantile=quantile
+    def sample_trajectory(self, num_months: int):
+        """An example trajectory for inflation-adjusted, taxed savings"""
+        inflation = self.country.inflation.sample_returns(num_months)
+        stock_returns = inflation + stock_premium_portfolio().sample_returns(num_months)
+        bond_returns = bond_portfolio().sample_returns(num_months)
+        combined_returns = (
+            stock_returns * self.stock_allocation + bond_returns * self.bond_allocation
         )
-        return self.apply_losses(pre_tax, monthly_additions=additions)
+        pre_tax = ExplainedTrajectory.infer_savings(
+            start_amount=self.current_savings,
+            additions=self._inflated_additions(inflation),
+            returns=combined_returns,
+        )
+        post_tax = self.country.tax_system.apply(pre_tax)
+        return self._deinflated_savings(inflated=post_tax, inflation=inflation)
 
-    def apply_losses(self, monthly_savings: np.ndarray, monthly_additions: np.ndarray):
-        post_tax = self.country.tax_system.tax_savings(
-            monthly_savings=monthly_savings,
-            monthly_additions=monthly_additions,
+    def sample_bank_trajectory(self, num_months: int):
+        """An example trajectory if the user kept money in the bank, adjusted for inflation"""
+        inflation = self.country.inflation.sample_returns(num_months)
+        account_balance = ExplainedTrajectory.infer_savings(
+            start_amount=self.current_savings,
+            additions=self._inflated_additions(inflation),
+            returns=np.full(fill_value=0, shape=num_months),
         )
-        return post_tax / np.cumprod(
-            np.full(shape=monthly_savings.shape, fill_value=1 + monthly_inflation())
+        return self._deinflated_savings(inflated=account_balance, inflation=inflation)
+
+    def _inflated_additions(self, inflation: np.ndarray):
+        return np.repeat(self.monthly_savings, len(inflation)) * np.cumprod(
+            1 + inflation
         )
 
-    def bank_savings(self, num_months: int):
-        """The user's savings if they were to keep money in the bank"""
-        monthly_additions = self.monthly_additions(num_months=num_months)
-        return self.apply_losses(
-            np.cumsum(monthly_additions), monthly_additions=monthly_additions
+    def _deinflated_savings(self, inflated: ExplainedTrajectory, inflation: np.ndarray):
+        deinflated = inflated.savings / np.concatenate([[1], np.cumprod(1 + inflation)])
+        return ExplainedTrajectory.infer_returns(
+            savings=deinflated,
+            additions=np.repeat(self.monthly_savings, len(inflation)),
         )
-
-    def monthly_additions(self, num_months: int) -> np.ndarray:
-        return np.array(
-            [self.current_savings] + [self.monthly_savings] * (num_months - 1)
-        ) * np.cumprod(np.full(shape=num_months, fill_value=1 + monthly_inflation()))
