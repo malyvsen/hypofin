@@ -57,11 +57,10 @@ def response(user: User, max_months=50 * 12):
         ),
         AggregateTrajectory.from_samples(
             scenario_id="worst_case",
-            name="System collapse scenario",
+            name="Worst forseeable scenario",
             description=(
                 f"Your savings will be above this line {(1 - default_probability) * 100:.1f}% of the time."
-                + " This number corresponds to the probability that your contry's banking system will stay afloat."
-                + " This means that the safety given by this scenario is as strong as what a bank can give you."
+                + f" Worse scenarios are possible, but they're as likely as your bank going bust - the probability of that is roughly {default_probability * 100:.1f}%."
             ),
             samples=portfolio_trajectories,
             quantile=default_probability,
