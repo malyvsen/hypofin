@@ -25,9 +25,7 @@ class User:
     def sample_trajectory(self, num_months: int):
         """An example trajectory for inflation-adjusted, taxed savings"""
         inflation = self.country.inflation.sample_returns(num_months)
-        stock_returns = inflation + predictions.stocks().sample_returns(
-            inflation=inflation
-        )
+        stock_returns = predictions.stocks().sample_returns(inflation=inflation)
         bond_returns = self.country.bonds.sample_returns(inflation=inflation)
         combined_returns = (
             stock_returns * self.stock_allocation + bond_returns * self.bond_allocation
