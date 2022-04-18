@@ -20,24 +20,6 @@ class Portfolio:
 
 
 @dataclass(frozen=True)
-class WeightedPortfolio(Portfolio):
-    """A weighted portfolio, rebalanced monthly"""
-
-    @dataclass(frozen=True)
-    class Component:
-        weight: float
-        portfolio: Portfolio
-
-    components: List[Component]
-
-    def sample_returns(self, num_steps: int) -> np.ndarray:
-        return sum(
-            component.portfolio.sample_returns(num_steps=num_steps) * component.weight
-            for component in self.components
-        )
-
-
-@dataclass(frozen=True)
 class RisklessPortfolio(Portfolio):
     return_per_step: float
 
@@ -67,16 +49,23 @@ class RiskyPortfolio(Portfolio):
 
 
 @dataclass(frozen=True)
-class InflationPortfolio(Portfolio):
-    future_predictions: np.ndarray
-    historical_inflation: np.ndarray
+class ReplayPortfolio(Portfolio):
+    """Plays out the predicted future and then repeats history cyclically from a randomly chosen point."""
+
+    predicted_returns: np.ndarray
+    prediction_confidence: np.ndarray
+    historical_returns: np.ndarray
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
-        predicted_result = self.future_predictions[:num_steps]
-        historical_start = np.random.randint(low=0, high=len(self.historical_inflation))
-        historical_end = historical_start + num_steps - len(predicted_result)
+        predicted_result = self.predicted_returns[:num_steps]
+        historical_start = np.random.randint(low=0, high=len(self.historical_returns))
+        historical_end = historical_start + num_steps
         historical_indices = np.arange(historical_start, historical_end) % len(
-            self.historical_inflation
+            self.historical_returns
         )
-        historical_result = self.historical_inflation[historical_indices]
-        return np.concatenate([predicted_result, historical_result])
+        historical_result = self.historical_returns[historical_indices]
+        confidence = self.prediction_confidence[: len(predicted_result)]
+        result_start = (predicted_result * confidence) + (
+            historical_result[: len(predicted_result)] * (1 - confidence)
+        )
+        return np.concatenate([result_start, historical_result[len(result_start) :]])
