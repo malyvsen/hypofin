@@ -1,6 +1,5 @@
 from chalice import Chalice
-from chalicelib import User, AggregateTrajectory, countries
-import numpy as np
+from chalicelib import User, AggregateTrajectory, countries, predictions
 
 
 app = Chalice(app_name="hypofin")
@@ -90,21 +89,19 @@ def response(user: User, max_months=50 * 12):
             list(trajectory.savings) for trajectory in portfolio_trajectories[:64]
         ],
         "allocation": [
-            {
-                "name": "Government bonds",
-                "isin": "",  # TODO
-                "current_fraction": user.bond_allocation,
-                "current_amount": user.current_savings * user.bond_allocation,
-                "monthly_fraction": user.bond_allocation,
-                "monthly_amount": user.current_savings * user.bond_allocation,
-            },
-            {
-                "name": "Lyxor Core MSCI World (DR) UCITS ETF - Acc",
-                "isin": "LU1781541179",
-                "current_fraction": user.stock_allocation,
-                "current_amount": user.current_savings * user.stock_allocation,
-                "monthly_fraction": user.stock_allocation,
-                "monthly_amount": user.current_savings * user.stock_allocation,
-            },
+            dict(
+                **user.country.bonds.metadata,
+                current_fraction=user.bond_allocation,
+                current_amount=user.current_savings * user.bond_allocation,
+                monthly_fraction=user.bond_allocation,
+                monthly_amount=user.current_savings * user.bond_allocation,
+            ),
+            dict(
+                **predictions.stocks().metadata,
+                current_fraction=user.stock_allocation,
+                current_amount=user.current_savings * user.stock_allocation,
+                monthly_fraction=user.stock_allocation,
+                monthly_amount=user.current_savings * user.stock_allocation,
+            ),
         ],
     }

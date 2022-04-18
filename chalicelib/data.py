@@ -112,5 +112,5 @@ def default_probability(country: str) -> float:
     return float(text_percent) / 100
 
 
-def stock_prices() -> pd.Series:
-    return yf.Ticker("^GSPC").history(period="max", interval="1mo")["Close"]
+def quotes(yfinance_code) -> pd.Series:
+    return yf.Ticker(yfinance_code).history(period="max", interval="1mo")["Close"]

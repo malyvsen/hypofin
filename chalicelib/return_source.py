@@ -1,8 +1,7 @@
-from cmath import inf
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
-from typing import List
+from typing import Dict
 
 from .trajectory import ExplainedTrajectory
 
@@ -23,13 +22,21 @@ class ReturnSource:
 
 
 @dataclass(frozen=True)
+class AnnotatedReturnSource(ReturnSource):
+    metadata: Dict[str, str]
+    return_source: ReturnSource
+
+    def sample_returns(self, *args, **kwargs):
+        return self.return_source.sample_returns(*args, **kwargs)
+
+    def sample_trajectory(self, *args, **kwargs):
+        return self.return_source.sample_trajectory(*args, **kwargs)
+
+
+@dataclass(frozen=True)
 class InflationPremiumSource(ReturnSource):
     fixed_returns: np.ndarray
     premium_source: ReturnSource
-
-    @classmethod
-    def immediate(cls, premium_source: ReturnSource):
-        return cls(fixed_returns=np.array([]), premium_source=premium_source)
 
     def sample_returns(self, inflation: np.ndarray) -> np.ndarray:
         fixed_part = self.fixed_returns[: len(inflation)]
