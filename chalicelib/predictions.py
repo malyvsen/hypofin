@@ -2,23 +2,22 @@ from cachetools import cached, TTLCache
 import numpy as np
 
 import chalicelib.data as data
-from .portfolio import RisklessPortfolio, RiskyPortfolio, ReplayPortfolio
+from .return_source import (
+    InflationPremiumSource,
+    RisklessReturnSource,
+    RiskyReturnSource,
+    ReplayReturnSource,
+)
 from .return_utils import annual_to_monthly
 
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
-def bond_portfolio():
-    return RisklessPortfolio(
-        return_per_step=annual_to_monthly(data.bond_yield("germany"))
-    )
-
-
-@cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
-def stock_premium_portfolio():
-    """A portfolio tracking the returns of stocks minus inflation"""
-    return RiskyPortfolio.from_historical_prices(
-        historical_prices=data.stock_prices(),
-        expected_return=annual_to_monthly(1 / data.global_cape_ratio()),
+def stocks():
+    return InflationPremiumSource.immediate(
+        RiskyReturnSource.from_historical_prices(
+            historical_prices=data.stock_prices(),
+            expected_return=annual_to_monthly(1 / data.global_cape_ratio()),
+        )
     )
 
 
@@ -32,11 +31,27 @@ def inflation(country: str):
         "netherlands": data.euro_inflation_predictions,
         "poland": data.pln_inflation_predictions,
     }[country]()
-    return ReplayPortfolio(
+    return ReplayReturnSource(
         predicted_returns=prediction,
         prediction_confidence=np.linspace(1, 0, num=len(prediction)),
         historical_returns=monthly,
     )
+
+
+@cached(cache=TTLCache(maxsize=16, ttl=24 * 60 * 60))
+def bonds(country: str) -> InflationPremiumSource:
+    if country == "netherlands":
+        return InflationPremiumSource.immediate(
+            premium_source=RisklessReturnSource(return_per_step=0),  # TODO
+        )
+    if country == "poland":
+        values = data.polish_bond_yield()
+        return InflationPremiumSource(
+            fixed_returns=np.array([annual_to_monthly(values["first_year"])] * 12),
+            premium_source=RisklessReturnSource(
+                return_per_step=annual_to_monthly(values["inflation_premium"])
+            ),
+        )
 
 
 @cached(cache=TTLCache(maxsize=16, ttl=24 * 60 * 60))

@@ -83,13 +83,22 @@ def gather_inflation_predictions(per_calendar_year: List[float]) -> np.array:
     )
 
 
-def bond_yield(country: str) -> float:
-    html = requests.get(f"http://www.worldgovernmentbonds.com/country/{country}/").text
-    text = BeautifulSoup(html, features="lxml").text
-    text_percent = re.findall(
-        "10Y Government Bond has a (-{0,1}\\d+\\.\\d+)% yield.", text
-    )[0]
-    return float(text_percent) / 100
+def polish_bond_yield():
+    response = requests.get(
+        f"https://www.obligacjeskarbowe.pl/oferta-obligacji/obligacje-10-letnie-edo"
+    )
+    text = BeautifulSoup(response.text, features="lxml").text
+
+    def value(regex):
+        whole, fractional = re.findall(regex, text)[0]
+        return float(f"{whole}.{fractional}") / 100
+
+    return dict(
+        first_year=value(
+            "(\\d+),(\\d+).{1}%[ \n]* w pierwszym rocznym okresie odsetkowym"
+        ),
+        inflation_premium=value("marża (\\d+),(\\d+)% \\+ inflacja"),
+    )
 
 
 def default_probability(country: str) -> float:

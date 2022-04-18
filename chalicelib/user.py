@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import numpy as np
 
+import chalicelib.predictions as predictions
 from .country import Country
-from .predictions import bond_portfolio, stock_premium_portfolio
 from .trajectory import ExplainedTrajectory
 
 
@@ -25,8 +25,10 @@ class User:
     def sample_trajectory(self, num_months: int):
         """An example trajectory for inflation-adjusted, taxed savings"""
         inflation = self.country.inflation.sample_returns(num_months)
-        stock_returns = inflation + stock_premium_portfolio().sample_returns(num_months)
-        bond_returns = bond_portfolio().sample_returns(num_months)
+        stock_returns = inflation + predictions.stocks().sample_returns(
+            inflation=inflation
+        )
+        bond_returns = self.country.bonds.sample_returns(inflation=inflation)
         combined_returns = (
             stock_returns * self.stock_allocation + bond_returns * self.bond_allocation
         )

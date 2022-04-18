@@ -91,8 +91,8 @@ def response(user: User, max_months=50 * 12):
         ],
         "allocation": [
             {
-                "name": "Amundi ETF J.P. Morgan GBI Global Government Bonds UCITS ETF DR",
-                "isin": " LU1437016204",
+                "name": "Government bonds",
+                "isin": "",  # TODO
                 "current_fraction": user.bond_allocation,
                 "current_amount": user.current_savings * user.bond_allocation,
                 "monthly_fraction": user.bond_allocation,

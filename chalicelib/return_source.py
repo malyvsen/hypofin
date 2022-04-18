@@ -1,3 +1,4 @@
+from cmath import inf
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
@@ -7,11 +8,13 @@ from .trajectory import ExplainedTrajectory
 
 
 @dataclass(frozen=True)
-class Portfolio:
-    def sample_returns(self, num_steps: int) -> np.ndarray:
+class ReturnSource:
+    def sample_returns(self, *args, **kwargs) -> np.ndarray:
         raise NotImplementedError()
 
-    def sample_trajectory(self, start_amount: float, additions: np.ndarray):
+    def sample_trajectory(
+        self, start_amount: float, additions: np.ndarray, *args, **kwargs
+    ):
         return ExplainedTrajectory.infer_savings(
             start_amount=start_amount,
             additions=additions,
@@ -20,7 +23,35 @@ class Portfolio:
 
 
 @dataclass(frozen=True)
-class RisklessPortfolio(Portfolio):
+class InflationPremiumSource(ReturnSource):
+    fixed_returns: np.ndarray
+    premium_source: ReturnSource
+
+    @classmethod
+    def immediate(cls, premium_source: ReturnSource):
+        return cls(fixed_returns=np.array([]), premium_source=premium_source)
+
+    def sample_returns(self, inflation: np.ndarray) -> np.ndarray:
+        fixed_part = self.fixed_returns[: len(inflation)]
+        delayed_inflation = inflation[len(fixed_part) :]
+        premium_part = (
+            self.premium_source.sample_returns(len(delayed_inflation))
+            + delayed_inflation
+        )
+        return np.concatenate([fixed_part, premium_part])
+
+    def sample_trajectory(
+        self, start_amount: float, additions: np.ndarray, inflation: np.ndarray
+    ) -> np.ndarray:
+        ExplainedTrajectory.infer_savings(
+            start_amount=start_amount,
+            additions=additions,
+            returns=self.sample_returns(inflation=inflation),
+        )
+
+
+@dataclass(frozen=True)
+class RisklessReturnSource(ReturnSource):
     return_per_step: float
 
     def sample_returns(self, num_steps: int) -> np.ndarray:
@@ -28,7 +59,7 @@ class RisklessPortfolio(Portfolio):
 
 
 @dataclass(frozen=True)
-class RiskyPortfolio(Portfolio):
+class RiskyReturnSource(ReturnSource):
     example_returns: np.ndarray
 
     @classmethod
@@ -49,7 +80,7 @@ class RiskyPortfolio(Portfolio):
 
 
 @dataclass(frozen=True)
-class ReplayPortfolio(Portfolio):
+class ReplayReturnSource(ReturnSource):
     """Plays out the predicted future and then repeats history cyclically from a randomly chosen point."""
 
     predicted_returns: np.ndarray

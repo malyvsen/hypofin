@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .predictions import inflation, monthly_default_probability
+import chalicelib.predictions as predictions
 from .tax_system import TaxSystem, CapitalGainsTaxSystem, WealthTaxSystem
 
 
@@ -10,11 +10,15 @@ class Country:
     tax_system: TaxSystem
 
     @property
+    def bonds(self):
+        return predictions.bonds(self.name)
+
+    @property
     def inflation(self):
-        return inflation(self.name)
+        return predictions.inflation(self.name)
 
     def default_probability(self, num_months: float):
-        monthly = monthly_default_probability(self.name)
+        monthly = predictions.monthly_default_probability(self.name)
         return 1 - (1 - monthly) ** num_months
 
 
