@@ -94,14 +94,14 @@ def response(user: User, max_months=50 * 12):
                 current_fraction=user.bond_allocation,
                 current_amount=user.current_savings * user.bond_allocation,
                 monthly_fraction=user.bond_allocation,
-                monthly_amount=user.current_savings * user.bond_allocation,
+                monthly_amount=user.monthly_savings * user.bond_allocation,
             ),
             dict(
                 **predictions.stocks().metadata,
                 current_fraction=user.stock_allocation,
                 current_amount=user.current_savings * user.stock_allocation,
                 monthly_fraction=user.stock_allocation,
-                monthly_amount=user.current_savings * user.stock_allocation,
+                monthly_amount=user.monthly_savings * user.stock_allocation,
             ),
         ],
     }
