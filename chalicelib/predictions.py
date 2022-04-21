@@ -14,20 +14,21 @@ from .return_utils import annual_to_monthly
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def stocks():
-    isin = "IE00BK5BQT80"
     expense_ratio = 0.0022
     return AnnotatedReturnSource(
         metadata=dict(
             name="Vanguard FTSE All-World UCITS ETF",
-            isin=isin,
+            isin="IE00BK5BQT80",
         ),
         return_source=InflationPremiumSource(
             premium_source=RiskyReturnSource.from_historical_prices(
-                historical_prices=data.quotes(isin),
+                historical_prices=data.quotes(
+                    "^GSPC"  # having more data is more important than using the exact instrument/currency
+                ),
                 expected_return=annual_to_monthly(
                     1 / data.global_cape_ratio() - expense_ratio
                 ),
-                autocorrelation_months=3,
+                autocorrelation_months=24,
             ),
         ),
     )
