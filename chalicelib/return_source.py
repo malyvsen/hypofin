@@ -8,16 +8,18 @@ from .trajectory import ExplainedTrajectory
 
 @dataclass(frozen=True)
 class ReturnSource:
-    def sample_returns(self, *args, **kwargs) -> np.ndarray:
+    def sample_returns(
+        self, num_months: int, inflation: np.ndarray = None
+    ) -> np.ndarray:
         raise NotImplementedError()
 
     def sample_trajectory(
-        self, start_amount: float, additions: np.ndarray, *args, **kwargs
+        self, start_amount: float, additions: np.ndarray, inflation: np.ndarray = None
     ):
         return ExplainedTrajectory.infer_savings(
             start_amount=start_amount,
             additions=additions,
-            returns=self.sample_returns(num_steps=len(additions)),
+            returns=self.sample_returns(num_months=len(additions), inflation=inflation),
         )
 
 
@@ -26,52 +28,60 @@ class AnnotatedReturnSource(ReturnSource):
     metadata: Dict[str, str]
     return_source: ReturnSource
 
-    def sample_returns(self, *args, **kwargs):
-        return self.return_source.sample_returns(*args, **kwargs)
+    def sample_returns(self, num_months: int, inflation: np.ndarray = None):
+        return self.return_source.sample_returns(
+            num_months=num_months, inflation=inflation
+        )
 
-    def sample_trajectory(self, *args, **kwargs):
-        return self.return_source.sample_trajectory(*args, **kwargs)
+
+@dataclass(frozen=True)
+class DelayedReturnSource(ReturnSource):
+    upcoming_returns: np.ndarray
+    return_source: ReturnSource
+
+    def sample_returns(self, num_months: int, inflation: np.ndarray = None):
+        upcoming_returns = self.upcoming_returns[:num_months]
+        sampled_returns = self.return_source.sample_returns(
+            num_months=num_months - len(upcoming_returns),
+            inflation=inflation[: -len(upcoming_returns)]  #  intentionally delayed
+            if inflation is not None
+            else None,
+        )
+        return np.concatenate([upcoming_returns, sampled_returns])
 
 
 @dataclass(frozen=True)
 class InflationPremiumSource(ReturnSource):
-    fixed_returns: np.ndarray
     premium_source: ReturnSource
 
-    def sample_returns(self, inflation: np.ndarray) -> np.ndarray:
-        fixed_part = self.fixed_returns[: len(inflation)]
-        delayed_inflation = inflation[len(fixed_part) :]
-        premium_part = (
-            self.premium_source.sample_returns(len(delayed_inflation))
-            + delayed_inflation
+    def sample_returns(self, num_months: int, inflation: np.ndarray) -> np.ndarray:
+        premium = self.premium_source.sample_returns(
+            num_months=num_months, inflation=inflation
         )
-        return np.concatenate([fixed_part, premium_part])
-
-    def sample_trajectory(
-        self, start_amount: float, additions: np.ndarray, inflation: np.ndarray
-    ) -> np.ndarray:
-        ExplainedTrajectory.infer_savings(
-            start_amount=start_amount,
-            additions=additions,
-            returns=self.sample_returns(inflation=inflation),
-        )
+        return (1 + premium) * (1 + inflation) - 1
 
 
 @dataclass(frozen=True)
 class RisklessReturnSource(ReturnSource):
-    return_per_step: float
+    monthly_return: float
 
-    def sample_returns(self, num_steps: int) -> np.ndarray:
-        return np.full(shape=num_steps, fill_value=self.return_per_step)
+    def sample_returns(
+        self, num_months: int, inflation: np.ndarray = None
+    ) -> np.ndarray:
+        return np.full(shape=num_months, fill_value=self.monthly_return)
 
 
 @dataclass(frozen=True)
 class RiskyReturnSource(ReturnSource):
     example_returns: np.ndarray
+    autocorrelation_months: int
 
     @classmethod
     def from_historical_prices(
-        cls, historical_prices: pd.Series, expected_return: float
+        cls,
+        historical_prices: pd.Series,
+        expected_return: float,
+        autocorrelation_months: int,
     ):
         historical_returns = np.array(
             historical_prices.pct_change(fill_method=None).dropna()
@@ -79,31 +89,21 @@ class RiskyReturnSource(ReturnSource):
         return cls(
             example_returns=historical_returns
             - historical_returns.mean()
-            + expected_return
+            + expected_return,
+            autocorrelation_months=autocorrelation_months,
         )
 
-    def sample_returns(self, num_steps: int) -> np.ndarray:
-        return np.random.choice(self.example_returns, size=num_steps)
-
-
-@dataclass(frozen=True)
-class ReplayReturnSource(ReturnSource):
-    """Plays out the predicted future and then repeats history cyclically from a randomly chosen point."""
-
-    predicted_returns: np.ndarray
-    prediction_confidence: np.ndarray
-    historical_returns: np.ndarray
-
-    def sample_returns(self, num_steps: int) -> np.ndarray:
-        predicted_result = self.predicted_returns[:num_steps]
-        historical_start = np.random.randint(low=0, high=len(self.historical_returns))
-        historical_end = historical_start + num_steps
-        historical_indices = np.arange(historical_start, historical_end) % len(
-            self.historical_returns
+    def sample_returns(
+        self, num_months: int, inflation: np.ndarray = None
+    ) -> np.ndarray:
+        start_indices = np.random.randint(
+            0,
+            len(self.example_returns),
+            size=(num_months + self.autocorrelation_months - 1)
+            // self.autocorrelation_months,
         )
-        historical_result = self.historical_returns[historical_indices]
-        confidence = self.prediction_confidence[: len(predicted_result)]
-        result_start = (predicted_result * confidence) + (
-            historical_result[: len(predicted_result)] * (1 - confidence)
-        )
-        return np.concatenate([result_start, historical_result[len(result_start) :]])
+        repeated_indices = start_indices.repeat(self.autocorrelation_months)[
+            :num_months
+        ]
+        indices = (repeated_indices + np.arange(num_months)) % len(self.example_returns)
+        return self.example_returns[indices]

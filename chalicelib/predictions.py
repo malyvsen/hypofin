@@ -4,10 +4,10 @@ import numpy as np
 import chalicelib.data as data
 from .return_source import (
     AnnotatedReturnSource,
+    DelayedReturnSource,
     InflationPremiumSource,
     RisklessReturnSource,
     RiskyReturnSource,
-    ReplayReturnSource,
 )
 from .return_utils import annual_to_monthly
 
@@ -22,12 +22,12 @@ def stocks():
             isin=isin,
         ),
         return_source=InflationPremiumSource(
-            fixed_returns=np.array([]),
             premium_source=RiskyReturnSource.from_historical_prices(
                 historical_prices=data.quotes(isin),
                 expected_return=annual_to_monthly(
                     1 / data.global_cape_ratio() - expense_ratio
                 ),
+                autocorrelation_months=3,
             ),
         ),
     )
@@ -39,8 +39,7 @@ def bonds(country: str):
         return AnnotatedReturnSource(
             metadata=dict(),
             return_source=InflationPremiumSource(
-                fixed_returns=np.array([]),
-                premium_source=RisklessReturnSource(return_per_step=0),  # TODO
+                premium_source=RisklessReturnSource(monthly_return=0),  # TODO
             ),
         )
     if country == "poland":
@@ -50,10 +49,14 @@ def bonds(country: str):
                 name="Obligacje 10-letnie EDO",
                 buy_url="https://www.obligacjeskarbowe.pl/oferta-obligacji/obligacje-10-letnie-edo/",
             ),
-            return_source=InflationPremiumSource(
-                fixed_returns=np.array([annual_to_monthly(values["first_year"])] * 12),
-                premium_source=RisklessReturnSource(
-                    return_per_step=annual_to_monthly(values["inflation_premium"])
+            return_source=DelayedReturnSource(
+                upcoming_returns=np.array(
+                    [annual_to_monthly(values["first_year"])] * 12
+                ),
+                return_source=InflationPremiumSource(
+                    premium_source=RisklessReturnSource(
+                        monthly_return=annual_to_monthly(values["inflation_premium"])
+                    ),
                 ),
             ),
         )
@@ -69,10 +72,12 @@ def inflation(country: str):
         "netherlands": data.euro_inflation_predictions,
         "poland": data.pln_inflation_predictions,
     }[country]()
-    return ReplayReturnSource(
-        predicted_returns=prediction,
-        prediction_confidence=np.linspace(1, 0, num=len(prediction)),
-        historical_returns=monthly,
+    return DelayedReturnSource(
+        upcoming_returns=prediction,
+        return_source=RiskyReturnSource(
+            example_returns=monthly,
+            autocorrelation_months=36,
+        ),
     )
 
 
