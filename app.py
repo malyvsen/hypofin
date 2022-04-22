@@ -90,11 +90,11 @@ def response(user: User, max_months=50 * 12):
         ],
         "allocation": [
             dict(
-                **user.country.bonds.metadata,
-                current_fraction=user.bond_allocation,
-                current_amount=user.current_savings * user.bond_allocation,
-                monthly_fraction=user.bond_allocation,
-                monthly_amount=user.monthly_savings * user.bond_allocation,
+                **user.safe_investment.metadata,
+                current_fraction=user.safe_allocation,
+                current_amount=user.current_savings * user.safe_allocation,
+                monthly_fraction=user.safe_allocation,
+                monthly_amount=user.monthly_savings * user.safe_allocation,
             ),
             dict(
                 **predictions.stocks().metadata,

@@ -83,15 +83,18 @@ def gather_inflation_predictions(per_calendar_year: List[float]) -> np.array:
     )
 
 
-def polish_bond_yield():
-    response = requests.get(
-        f"https://www.obligacjeskarbowe.pl/oferta-obligacji/obligacje-10-letnie-edo"
-    )
+def polish_bond_yield(months_to_maturity: int):
+    response = requests.get(polish_bond_urls[months_to_maturity])
     text = BeautifulSoup(response.text, features="lxml").text
 
     def value(regex):
         whole, fractional = re.findall(regex, text)[0]
         return float(f"{whole}.{fractional}") / 100
+
+    if months_to_maturity == 3:
+        return value("(\\d+),(\\d+).{1}%[ \n]* w skali roku")
+    if months_to_maturity == 24:
+        return value("(\\d+),(\\d+).{1}%[ \n]* w każdym roku oszczędzania")
 
     return dict(
         first_year=value(
@@ -99,6 +102,19 @@ def polish_bond_yield():
         ),
         inflation_premium=value("marża (\\d+),(\\d+)% \\+ inflacja"),
     )
+
+
+polish_bond_names = {
+    3: "Obligacje 3-miesieczne OTS",
+    24: "Obligacje 2-letnie DOS",
+    48: "Obligacje 4-letnie COI",
+    120: "Obligacje 10-letnie EDO",
+}
+polish_bond_urls = {
+    months_to_maturity: "https://www.obligacjeskarbowe.pl/oferta-obligacji/"
+    + name.lower().replace(" ", "-")
+    for months_to_maturity, name in polish_bond_names.items()
+}
 
 
 def default_probability(country: str) -> float:

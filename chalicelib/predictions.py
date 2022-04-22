@@ -40,32 +40,32 @@ def stocks():
 
 
 @cached(cache=TTLCache(maxsize=16, ttl=24 * 60 * 60))
-def bonds(country: str):
-    if country == "netherlands":
+def polish_bonds(months_to_maturity: int):
+    metadata = dict(
+        name=data.polish_bond_names[months_to_maturity],
+        buy_url=data.polish_bond_urls[months_to_maturity],
+    )
+    if months_to_maturity < 48:
         return AnnotatedReturnSource(
-            metadata=dict(),
+            metadata=metadata,
+            return_source=RisklessReturnSource(
+                monthly_return=annual_to_monthly(
+                    data.polish_bond_yield(months_to_maturity)
+                )
+            ),
+        )
+    values = data.polish_bond_yield(months_to_maturity)
+    return AnnotatedReturnSource(
+        metadata=metadata,
+        return_source=DelayedReturnSource(
+            upcoming_returns=np.array([annual_to_monthly(values["first_year"])] * 12),
             return_source=InflationPremiumSource(
-                premium_source=RisklessReturnSource(monthly_return=0),  # TODO
-            ),
-        )
-    if country == "poland":
-        values = data.polish_bond_yield()
-        return AnnotatedReturnSource(
-            metadata=dict(
-                name="Obligacje 10-letnie EDO",
-                buy_url="https://www.obligacjeskarbowe.pl/oferta-obligacji/obligacje-10-letnie-edo/",
-            ),
-            return_source=DelayedReturnSource(
-                upcoming_returns=np.array(
-                    [annual_to_monthly(values["first_year"])] * 12
-                ),
-                return_source=InflationPremiumSource(
-                    premium_source=RisklessReturnSource(
-                        monthly_return=annual_to_monthly(values["inflation_premium"])
-                    ),
+                premium_source=RisklessReturnSource(
+                    monthly_return=annual_to_monthly(values["inflation_premium"])
                 ),
             ),
-        )
+        ),
+    )
 
 
 @cached(cache=TTLCache(maxsize=16, ttl=24 * 60 * 60))
