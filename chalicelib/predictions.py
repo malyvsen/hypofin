@@ -33,7 +33,7 @@ def stocks():
                         autocorrelation_months=24,
                     ),
                 ),
-                RisklessReturnSource(monthly_return=-expense_ratio),
+                RisklessReturnSource(monthly_return=annual_to_monthly(-expense_ratio)),
             ]
         ),
     )
