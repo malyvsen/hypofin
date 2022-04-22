@@ -34,7 +34,7 @@ def response(user: User, max_months=50 * 12):
         bank_trajectory.months_to_goal(user.goal_price) or max_months
     )
     portfolio_trajectories = [
-        user.sample_trajectory(max_months) for sample_idx in range(4096)
+        user.sample_trajectory(max_months) for sample_idx in range(1024)
     ]
     quantile_trajectories = [
         AggregateTrajectory.from_samples(
