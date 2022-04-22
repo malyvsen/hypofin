@@ -14,6 +14,7 @@ from .return_utils import annual_to_monthly
 
 @cached(cache=TTLCache(maxsize=1, ttl=24 * 60 * 60))
 def stocks():
+    """Stock return estimation method based on: Shiller, Robert J. 2000. Irrational Exuberance"""
     expense_ratio = 0.0022
     return AnnotatedReturnSource(
         metadata=dict(
