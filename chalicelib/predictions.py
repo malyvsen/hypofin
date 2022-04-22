@@ -4,6 +4,7 @@ import numpy as np
 import chalicelib.data as data
 from .return_source import (
     AnnotatedReturnSource,
+    SumReturnSource,
     DelayedReturnSource,
     InflationPremiumSource,
     RisklessReturnSource,
@@ -21,16 +22,19 @@ def stocks():
             name="Vanguard FTSE All-World UCITS ETF",
             isin="IE00BK5BQT80",
         ),
-        return_source=InflationPremiumSource(
-            premium_source=RiskyReturnSource.from_historical_prices(
-                historical_prices=data.quotes(
-                    "^GSPC"  # having more data is more important than using the exact instrument/currency
+        return_source=SumReturnSource(
+            return_sources=[
+                InflationPremiumSource(
+                    premium_source=RiskyReturnSource.from_historical_prices(
+                        historical_prices=data.quotes(
+                            "^GSPC"  # having more data is more important than using the exact instrument/currency
+                        ),
+                        expected_return=annual_to_monthly(1 / data.global_cape_ratio()),
+                        autocorrelation_months=24,
+                    ),
                 ),
-                expected_return=annual_to_monthly(
-                    1 / data.global_cape_ratio() - expense_ratio
-                ),
-                autocorrelation_months=24,
-            ),
+                RisklessReturnSource(monthly_return=-expense_ratio),
+            ]
         ),
     )
 

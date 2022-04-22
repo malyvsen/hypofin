@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
-from typing import Dict
+from typing import Dict, List
 
 from .trajectory import ExplainedTrajectory
 
@@ -31,6 +31,17 @@ class AnnotatedReturnSource(ReturnSource):
     def sample_returns(self, num_months: int, inflation: np.ndarray = None):
         return self.return_source.sample_returns(
             num_months=num_months, inflation=inflation
+        )
+
+
+@dataclass(frozen=True)
+class SumReturnSource(ReturnSource):
+    return_sources: List[ReturnSource]
+
+    def sample_returns(self, num_months: int, inflation: np.ndarray = None):
+        return sum(
+            source.sample_returns(num_months=num_months, inflation=inflation)
+            for source in self.return_sources
         )
 
 
