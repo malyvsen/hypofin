@@ -60,6 +60,7 @@ def response(user: User, max_months=50 * 12):
     return {
         "aggregate_trajectories": [
             {
+                "scenario_id": trajectory.scenario_id,
                 "probability": 1 - trajectory.quantile,
                 "months_to_goal": trajectory.months_to_goal(user.goal_price),
                 "trajectory": list(trajectory.savings[:num_relevant_months]),
