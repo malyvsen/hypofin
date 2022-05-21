@@ -16,7 +16,7 @@ class Trajectory:
     def months_to_goal(self, goal: float) -> int:
         """The number of months until the goal is reached, or None if it is never reached"""
         (success_indices,) = np.where(self.savings >= goal)
-        return success_indices[0] if len(success_indices) > 0 else None
+        return int(success_indices[0]) if len(success_indices) > 0 else None
 
 
 @dataclass(frozen=True)

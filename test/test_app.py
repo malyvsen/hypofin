@@ -1,3 +1,4 @@
+import json
 from app import response
 from chalicelib import User, countries
 
@@ -45,3 +46,15 @@ def test_impossible_goal():
         country=countries["netherlands"],
     )
     response(user)
+
+
+def test_serialization():
+    user = User(
+        risk_preference=36,
+        monthly_savings=5,
+        goal_price=230,
+        current_savings=180,
+        country=countries["netherlands"],
+    )
+    test_me = response(user)
+    json.dumps(test_me)
