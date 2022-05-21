@@ -13,11 +13,6 @@ class Trajectory:
     def start_amount(self) -> float:
         return self.savings[0]
 
-    def years_to_goal(self, goal: float) -> int:
-        """The number of years until the goal is reached, or None if it is never reached"""
-        months = self.months_to_goal(goal)
-        return int((months + 11) / 12) if months is not None else None
-
     def months_to_goal(self, goal: float) -> int:
         """The number of months until the goal is reached, or None if it is never reached"""
         (success_indices,) = np.where(self.savings >= goal)
@@ -61,23 +56,17 @@ class ExplainedTrajectory(Trajectory):
 @dataclass(frozen=True)
 class AggregateTrajectory(Trajectory):
     scenario_id: str
-    name: str
-    description: str
     quantile: float
 
     @classmethod
     def from_samples(
         cls,
         scenario_id: str,
-        name: str,
-        description: str,
         samples: List[Trajectory],
         quantile: float,
     ):
         return cls(
             scenario_id=scenario_id,
-            name=name,
-            description=description,
             savings=np.quantile(
                 [sample.savings for sample in samples], q=quantile, axis=0
             ),

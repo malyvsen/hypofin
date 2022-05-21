@@ -22,11 +22,6 @@ def index():
 def response(user: User, max_months=50 * 12):
     bank_trajectory = AggregateTrajectory.from_samples(
         scenario_id="bank",
-        name="Bank account",
-        description=(
-            "For comparison, this is what you would get on average if you kept your money in a bank account."
-            + " We show your inflation-adjusted savings, so you can see inflation eating away at your money."
-        ),
         samples=[user.sample_bank_trajectory(max_months) for sample_idx in range(256)],
         quantile=0.5,
     )
@@ -39,28 +34,16 @@ def response(user: User, max_months=50 * 12):
     quantile_trajectories = [
         AggregateTrajectory.from_samples(
             scenario_id="average",
-            name="Average scenario",
-            description=(
-                "This line marks the border between the top and bottom half of all scenarios."
-                + " You can interpret it as an average case."
-            ),
             samples=portfolio_trajectories,
             quantile=0.5,
         ),
         AggregateTrajectory.from_samples(
             scenario_id="pessimistic",
-            name="Pessimistic scenario",
-            description="Your savings will be above this line 75% of the time.",
             samples=portfolio_trajectories,
             quantile=0.25,
         ),
         AggregateTrajectory.from_samples(
-            scenario_id="worst_case",
-            name="Worst forseeable scenario",
-            description=(
-                f"Your savings will be above this line {(1 - default_probability) * 100:.1f}% of the time."
-                + f" Worse scenarios are possible, but they're as likely as your bank going bust - the probability of that is roughly {default_probability * 100:.1f}%."
-            ),
+            scenario_id="worst",
             samples=portfolio_trajectories,
             quantile=default_probability,
         ),
@@ -77,10 +60,8 @@ def response(user: User, max_months=50 * 12):
     return {
         "aggregate_trajectories": [
             {
-                "name": trajectory.name,
-                "description": trajectory.description,
                 "probability": 1 - trajectory.quantile,
-                "num_years": trajectory.years_to_goal(user.goal_price),
+                "months_to_goal": trajectory.months_to_goal(user.goal_price),
                 "trajectory": list(trajectory.savings[:num_relevant_months]),
             }
             for trajectory in quantile_trajectories + [bank_trajectory]
