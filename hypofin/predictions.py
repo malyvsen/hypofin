@@ -1,14 +1,15 @@
-from cachetools import cached, TTLCache
 import numpy as np
+from cachetools import TTLCache, cached
 
-import chalicelib.data as data
+import hypofin.data as data
+
 from .return_source import (
     AnnotatedReturnSource,
-    SumReturnSource,
     DelayedReturnSource,
     InflationPremiumSource,
     RisklessReturnSource,
     RiskyReturnSource,
+    SumReturnSource,
 )
 from .return_utils import annual_to_monthly
 

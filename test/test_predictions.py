@@ -1,4 +1,4 @@
-from chalicelib.predictions import stocks
+from hypofin.predictions import stocks
 
 
 def test_stocks():

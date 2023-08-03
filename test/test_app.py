@@ -1,6 +1,7 @@
 import json
+
 from app import response
-from chalicelib import User, countries
+from hypofin import User, countries
 
 
 def test_netherlands():

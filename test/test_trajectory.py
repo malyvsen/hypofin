@@ -1,6 +1,6 @@
 import numpy as np
 
-from chalicelib.trajectory import ExplainedTrajectory
+from hypofin.trajectory import ExplainedTrajectory
 
 
 def test_returns_reconstruction():

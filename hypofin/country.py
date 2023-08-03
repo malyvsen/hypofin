@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-import chalicelib.data as data
-import chalicelib.predictions as predictions
-from .tax_system import TaxSystem, CapitalGainsTaxSystem, WealthTaxSystem
+import hypofin.data as data
+import hypofin.predictions as predictions
+
 from .return_source import AnnotatedReturnSource
+from .tax_system import CapitalGainsTaxSystem, TaxSystem, WealthTaxSystem
 
 
 @dataclass(frozen=True)

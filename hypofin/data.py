@@ -1,13 +1,14 @@
-from bs4 import BeautifulSoup
+import re
 from datetime import date
 from io import BytesIO
+from typing import List
+from zipfile import ZipFile
+
 import numpy as np
 import pandas as pd
-import re
 import requests
-from typing import List
 import yfinance as yf
-from zipfile import ZipFile
+from bs4 import BeautifulSoup
 
 from .return_utils import annual_to_monthly
 

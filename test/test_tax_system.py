@@ -1,7 +1,7 @@
 import numpy as np
 
-from chalicelib.trajectory import ExplainedTrajectory
-from chalicelib.tax_system import CapitalGainsTaxSystem, WealthTaxSystem
+from hypofin.tax_system import CapitalGainsTaxSystem, WealthTaxSystem
+from hypofin.trajectory import ExplainedTrajectory
 
 
 def test_capital_gains():

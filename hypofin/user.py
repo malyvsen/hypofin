@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from functools import cached_property
+
 import numpy as np
 
-import chalicelib.predictions as predictions
+import hypofin.predictions as predictions
+
 from .country import Country
 from .return_source import AnnotatedReturnSource, RisklessReturnSource
 from .trajectory import ExplainedTrajectory

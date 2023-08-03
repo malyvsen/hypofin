@@ -1,6 +1,6 @@
 from chalice import Chalice
-from chalicelib import User, AggregateTrajectory, countries, predictions
 
+from hypofin import AggregateTrajectory, User, countries, predictions
 
 app = Chalice(app_name="hypofin")
 

@@ -1,7 +1,7 @@
 import numpy as np
 
-from chalicelib.user import User
-from chalicelib.country import countries
+from hypofin.country import countries
+from hypofin.user import User
 
 
 def test_start_amount_consistency():

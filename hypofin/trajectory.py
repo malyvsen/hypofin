@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-import numpy as np
 from typing import List
+
+import numpy as np
 
 
 @dataclass(frozen=True)
