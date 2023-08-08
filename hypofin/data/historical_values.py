@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -8,7 +8,7 @@ import yfinance as yf
 
 from .cache import refresh_daily
 
-PLN_CONCEPTION = datetime(year=1995, month=1, day=1)
+PLN_CONCEPTION = date(year=1995, month=1, day=1)
 
 
 @refresh_daily
@@ -34,11 +34,11 @@ def historical_usd_pln() -> pd.Series:
     """The value of 1 USD in PLN, monthly."""
     data = pd.read_csv(
         "https://stooq.com/q/d/l/?s=usdpln&i=m", parse_dates=["Date"], index_col="Date"
-    )["Close"][lambda x: x.index >= PLN_CONCEPTION]
+    )["Close"]
     # add timedelta to match with historical prices
     return pd.Series(
-        name="USD/PLN", index=data.index + timedelta(days=1), data=data.values
-    )
+        name="USD/PLN", index=data.index.date + timedelta(days=1), data=data.values
+    )[PLN_CONCEPTION:]
 
 
 @refresh_daily
