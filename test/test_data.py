@@ -3,10 +3,10 @@ from datetime import datetime
 from hypofin.data import (
     BondYield,
     global_cape_ratio,
-    historical_inflation,
+    historical_inflation_pln,
     historical_prices_pln,
-    historical_usd_pln,
 )
+from hypofin.data.historical_values import historical_usd_pln
 
 
 def test_polish_bond_yield():
@@ -19,8 +19,8 @@ def test_global_cape_ratio():
     assert 10 < global_cape_ratio() < 30
 
 
-def test_historical_inflation():
-    result = historical_inflation()
+def test_historical_inflation_pln():
+    result = historical_inflation_pln()
     assert result.index.min() == 1995
     assert result.index.max() >= datetime.now().year - 2
     assert len(result) == result.index.max() - result.index.min() + 1
