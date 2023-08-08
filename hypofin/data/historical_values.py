@@ -6,9 +6,12 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from .cache import refresh_daily
+
 PLN_CONCEPTION = datetime(year=1995, month=1, day=1)
 
 
+@refresh_daily
 def historical_prices_pln(yfinance_code: str):
     """The historical prices of a security, in PLN, monthly."""
     return (
@@ -38,6 +41,7 @@ def historical_usd_pln() -> pd.Series:
     )
 
 
+@refresh_daily
 def historical_inflation_pln() -> pd.Series:
     """The yearly inflation of PLN since its conception in 1995."""
     response = requests.get(

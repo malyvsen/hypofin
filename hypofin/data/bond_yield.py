@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import requests
 from bs4 import BeautifulSoup
 
+from .cache import refresh_daily
+
 
 @dataclass(frozen=True)
 class BondYield:
@@ -11,6 +13,7 @@ class BondYield:
     inflation_premium: float
 
     @classmethod
+    @refresh_daily
     def polish_four_year(cls):
         response = requests.get(
             "https://www.obligacjeskarbowe.pl/oferta-obligacji/obligacje-4-letnie-coi"
