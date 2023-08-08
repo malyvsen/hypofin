@@ -4,7 +4,6 @@ from functools import cached_property
 import numpy as np
 
 from .portfolio import Portfolio
-from .return_conversion import annual_to_monthly
 from .scenario import Scenario
 
 CAPITAL_GAINS_TAX = 0.19
@@ -26,7 +25,7 @@ class Trajectory:
         return (
             self.total_investment
             + negative_excess
-            + positive_excess * (1 + annual_to_monthly(-CAPITAL_GAINS_TAX))
+            + positive_excess * (1 - CAPITAL_GAINS_TAX)
         )
 
     @cached_property
