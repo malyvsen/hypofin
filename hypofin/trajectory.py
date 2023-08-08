@@ -19,11 +19,12 @@ class Trajectory:
     @cached_property
     def post_tax_savings(self):
         """The money one would obtain by selling all their assets at any given time."""
-        excess_savings = self.pre_tax_savings - self.total_investment
+        total_investment = self.portfolio.total_investment(self.scenario.num_months)
+        excess_savings = self.pre_tax_savings - total_investment
         negative_excess = np.minimum(excess_savings, 0)
         positive_excess = np.maximum(excess_savings, 0)
         return (
-            self.total_investment
+            total_investment
             + negative_excess
             + positive_excess * (1 - CAPITAL_GAINS_TAX)
         )
@@ -44,11 +45,4 @@ class Trajectory:
         return (
             self.portfolio.bond_fraction * self.scenario.bond_returns
             + self.portfolio.stock_fraction * self.scenario.stock_returns
-        )
-
-    @cached_property
-    def total_investment(self):
-        return (
-            self.portfolio.initial_investment
-            + np.arange(self.scenario.num_months) * self.portfolio.monthly_addition
         )
