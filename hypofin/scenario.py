@@ -1,8 +1,14 @@
 from dataclasses import dataclass
+from functools import cached_property
 
 import numpy as np
 
-from .data import global_cape_ratio, historical_inflation_pln, historical_prices_pln
+from .data import (
+    BondYield,
+    global_cape_ratio,
+    historical_inflation_pln,
+    historical_prices_pln,
+)
 from .return_conversion import annual_to_monthly, prices_to_returns
 
 
@@ -12,6 +18,26 @@ class Scenario:
 
     inflation: np.ndarray
     stock_returns: np.ndarray
+
+    @cached_property
+    def bond_returns(self):
+        bond_yield = BondYield.polish_four_year()
+        if self.num_months <= 12:
+            return np.array(
+                [annual_to_monthly(bond_yield.first_year)] * self.num_months
+            )
+        total_inflation = self.inflation.cumprod()
+        inflation_year_over_year = total_inflation[12:] / total_inflation[:-12]
+        return np.array(
+            [annual_to_monthly(bond_yield.first_year)] * 12
+            + annual_to_monthly(
+                inflation_year_over_year + bond_yield.inflation_premium
+            ).tolist()
+        )
+
+    @cached_property
+    def num_months(self):
+        return len(self.inflation)
 
     @classmethod
     def hypothesize(cls, num_months: int):
