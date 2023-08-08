@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -8,9 +9,36 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+PLN_CONCEPTION = datetime(year=1995, month=1, day=1)
 
-def quotes(yfinance_code) -> pd.Series:
-    return yf.Ticker(yfinance_code).history(period="max", interval="1mo")["Close"]
+
+def historical_prices_pln(yfinance_code: str):
+    """The historical prices of a security, in PLN, monthly."""
+    return (
+        (historical_prices_usd(yfinance_code) * historical_usd_pln())
+        .rename(f"{yfinance_code} (PLN)")
+        .dropna()
+    )
+
+
+def historical_prices_usd(yfinance_code: str) -> pd.Series:
+    """The historical prices of a security, in USD, monthly."""
+    # use open instead of close price to match with currency rates
+    data = yf.Ticker(yfinance_code).history(period="max", interval="1mo")["Open"]
+    return pd.Series(
+        name=f"{yfinance_code} (USD)", index=data.index.date, data=data.values
+    )
+
+
+def historical_usd_pln() -> pd.Series:
+    """The value of 1 USD in PLN, monthly."""
+    data = pd.read_csv(
+        "https://stooq.com/q/d/l/?s=usdpln&i=m", parse_dates=["Date"], index_col="Date"
+    )["Close"][lambda x: x.index >= PLN_CONCEPTION]
+    # add timedelta to match with historical prices
+    return pd.Series(
+        name="USD/PLN", index=data.index + timedelta(days=1), data=data.values
+    )
 
 
 def global_cape_ratio() -> float:
@@ -34,7 +62,9 @@ def historical_inflation() -> pd.Series:
     return pd.Series(
         {
             int(index): value / 100
-            for index, value in selected.loc["1995":].dropna().items()
+            for index, value in selected.loc[str(PLN_CONCEPTION.year) :]
+            .dropna()
+            .items()
         }
     )
 
