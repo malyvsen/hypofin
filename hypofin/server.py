@@ -1,3 +1,4 @@
+import numpy as np
 from fastapi import FastAPI
 
 from .caching import refresh_daily
@@ -23,9 +24,23 @@ def root(request: Request):
         Trajectory(portfolio=portfolio, scenario=scenario)
         for scenario in hypothetical_scenarios()
     ]
+    gain_probability = np.mean(
+        [trajectory.gain_indicator for trajectory in trajectories], axis=0
+    )
     return Response(
-        success_probability=[],
-        loss_probability=[],
+        success_probability=(
+            None
+            if request.goal_price is None
+            else np.mean(
+                [
+                    trajectory.success_indicator(initial_goal_price=request.goal_price)
+                    for trajectory in trajectories
+                ],
+                axis=0,
+            )
+        ),
+        gain_probability=gain_probability,
+        loss_probability=1 - gain_probability,
         bank_trajectory=portfolio.total_investment(NUM_MONTHS),
         scenarios=[
             Response.Scenario(

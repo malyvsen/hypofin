@@ -10,9 +10,11 @@ class Request(BaseModel):
 
 class Response(BaseModel):
     success_probability: list[float]
-    """The probability of achieving the goal,
-    or making money at all if no goal is provided."""
+    """The probability of achieving the goal over time."""
+    gain_probability: list[float]
+    """The probability of making money over time."""
     loss_probability: list[float]
+    """The probability of losing money over time."""
     bank_trajectory: list[float]
     scenarios: list["Response.Scenario"]
 
