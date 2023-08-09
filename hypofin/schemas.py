@@ -9,7 +9,7 @@ class Request(BaseModel):
 
 
 class Response(BaseModel):
-    success_probability: list[float]
+    success_probability: list[float] | None
     """The probability of achieving the goal over time."""
     gain_probability: list[float]
     """The probability of making money over time."""
