@@ -24,3 +24,11 @@ def test_cumulative_inflation():
         stock_returns=np.full(fill_value=-0.1, shape=3),
     )
     assert np.allclose(scenario.cumulative_inflation, [0, 1, 3, 7])
+
+
+def test_inflated_price():
+    scenario = Scenario(
+        inflation=np.full(fill_value=0.5, shape=3),
+        stock_returns=np.full(fill_value=-0.1, shape=3),
+    )
+    assert np.allclose(scenario.inflated_price(8), [8, 12, 18, 27])

@@ -72,3 +72,6 @@ class Scenario:
             inflation=sampled_inflation,
             stock_returns=sampled_stock_returns,
         )
+
+    def inflated_price(self, initial_price):
+        return initial_price * (1 + self.cumulative_inflation)
