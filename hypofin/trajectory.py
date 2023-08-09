@@ -19,7 +19,7 @@ class Trajectory:
     @cached_property
     def post_tax_savings(self):
         """The money one would obtain by selling all their assets at any given time."""
-        total_investment = self.portfolio.total_investment(self.scenario.num_months + 1)
+        total_investment = self.portfolio.total_investment(self.scenario.num_months)
         excess_savings = self.pre_tax_savings - total_investment
         negative_excess = np.minimum(excess_savings, 0)
         positive_excess = np.maximum(excess_savings, 0)

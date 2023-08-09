@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-from .cache import refresh_daily
+from hypofin.caching import refresh_daily
 
 PLN_CONCEPTION = date(year=1995, month=1, day=1)
 

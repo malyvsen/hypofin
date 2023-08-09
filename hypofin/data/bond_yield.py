@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import requests
 from bs4 import BeautifulSoup
 
-from .cache import refresh_daily
+from hypofin.caching import refresh_daily
 
 
 @dataclass(frozen=True)

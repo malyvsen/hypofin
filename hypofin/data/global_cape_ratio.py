@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .cache import refresh_daily
+from hypofin.caching import refresh_daily
 
 
 @refresh_daily

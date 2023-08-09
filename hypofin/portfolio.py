@@ -15,5 +15,7 @@ class Portfolio:
         return 1 - self.bond_fraction
 
     def total_investment(self, num_months: int):
-        """The total invested amount over time."""
-        return self.initial_investment + np.arange(num_months) * self.monthly_addition
+        """The total invested amount, month by month."""
+        return (
+            self.initial_investment + np.arange(num_months + 1) * self.monthly_addition
+        )

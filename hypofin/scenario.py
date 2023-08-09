@@ -67,3 +67,9 @@ class Scenario:
             inflation=sampled_inflation,
             stock_returns=sampled_stock_returns,
         )
+
+    def prices(self, initial_price: float):
+        """How much something starting at initial_price will cost over time."""
+        return np.array(
+            [initial_price] + list(initial_price * np.cumprod(self.inflation + 1))
+        )
