@@ -8,7 +8,8 @@ from .schemas import Request, Response
 from .trajectory import Trajectory
 
 NUM_MONTHS = 50 * 12
-NUM_SIMULATIONS = 1000
+NUM_SCENARIOS = 1000
+NUM_RETURNED_SCENARIOS = 10
 
 server = FastAPI()
 
@@ -51,11 +52,11 @@ def root(request: Request):
                     else request.goal_price * trajectory.scenario.cumulative_inflation
                 ),
             )
-            for trajectory in trajectories
+            for trajectory in trajectories[:NUM_RETURNED_SCENARIOS]
         ],
     )
 
 
 @refresh_daily
 def hypothetical_scenarios():
-    return [Scenario.hypothesize(num_months=NUM_MONTHS) for _ in range(NUM_SIMULATIONS)]
+    return [Scenario.hypothesize(num_months=NUM_MONTHS) for _ in range(NUM_SCENARIOS)]
