@@ -20,24 +20,29 @@ class Scenario:
     stock_returns: np.ndarray
 
     @cached_property
+    def num_months(self):
+        return len(self.inflation)
+
+    @cached_property
+    def cumulative_inflation(self):
+        return np.concatenate([[0], (1 + self.inflation).cumprod() - 1])
+
+    @cached_property
     def bond_returns(self):
         bond_yield = BondYield.polish_four_year()
         if self.num_months <= 12:
             return np.array(
                 [annual_to_monthly(bond_yield.first_year)] * self.num_months
             )
-        total_inflation = self.inflation.cumprod()
-        inflation_year_over_year = total_inflation[12:] / total_inflation[:-12]
+        inflation_year_over_year = (1 + self.cumulative_inflation[13:]) / (
+            1 + self.cumulative_inflation[1:-12]
+        ) - 1
         return np.array(
             [annual_to_monthly(bond_yield.first_year)] * 12
             + annual_to_monthly(
                 inflation_year_over_year + bond_yield.inflation_premium
             ).tolist()
         )
-
-    @cached_property
-    def num_months(self):
-        return len(self.inflation)
 
     @classmethod
     def hypothesize(cls, num_months: int):
@@ -66,10 +71,4 @@ class Scenario:
         return cls(
             inflation=sampled_inflation,
             stock_returns=sampled_stock_returns,
-        )
-
-    def prices(self, initial_price: float):
-        """How much something starting at initial_price will cost over time."""
-        return np.array(
-            [initial_price] + list(initial_price * np.cumprod(self.inflation + 1))
         )

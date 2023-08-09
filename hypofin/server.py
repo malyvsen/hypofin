@@ -48,7 +48,7 @@ def root(request: Request):
                 goal_trajectory=(
                     None
                     if request.goal_price is None
-                    else trajectory.scenario.prices(request.goal_price)
+                    else request.goal_price * trajectory.scenario.cumulative_inflation
                 ),
             )
             for trajectory in trajectories
