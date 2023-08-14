@@ -1,6 +1,5 @@
 import { useState } from "react";
 import SituationPage from "./SituationPage";
-import "./App.css";
 
 function App() {
   const [currentSavings, setCurrentSavings] = useState<number | undefined>();
