@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 import Plot from "react-plotly.js";
 import axios from "axios";
 
@@ -13,25 +14,43 @@ function Plots({
   riskPreference: number;
   goalPrice: number | undefined;
 }) {
+  const [debouncedMonthlySavings] = useDebounce(monthlySavings, 100);
+  const [debouncedRiskPreference] = useDebounce(riskPreference, 100);
   const [response, setResponse] = useState<BackendResponse>();
   useEffect(() => {
     axios
       .post("http://localhost:8000/", {
         initial_investment: currentSavings,
-        monthly_addition: monthlySavings,
-        bond_fraction: riskPreference,
+        monthly_addition: debouncedMonthlySavings,
+        bond_fraction: 1 - debouncedRiskPreference,
         goal_price: goalPrice === undefined ? null : goalPrice,
       })
       .then(({ data }) => {
         setResponse(data);
       });
-  }, [currentSavings, monthlySavings, riskPreference, goalPrice]);
+  }, [
+    currentSavings,
+    debouncedMonthlySavings,
+    debouncedRiskPreference,
+    goalPrice,
+  ]);
 
   if (response === undefined) return <></>;
   return (
     <Plot
       layout={{ title: "Prawdopodobieństwa" }}
-      data={[{ type: "scatter", y: response.gain_probability }]}
+      data={[
+        {
+          type: "scatter",
+          name: "Szanse na zysk",
+          y: response.gain_probability,
+        },
+        {
+          type: "scatter",
+          name: "Szanse na stratę",
+          y: response.loss_probability,
+        },
+      ]}
     />
   );
 }
