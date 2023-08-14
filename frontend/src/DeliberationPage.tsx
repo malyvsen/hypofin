@@ -1,14 +1,14 @@
-import { useEffect, useState, SetStateAction } from "react";
-import Plot from "react-plotly.js";
-import axios from "axios";
+import { SetStateAction } from "react";
 import { numericFormatter } from "react-number-format";
 
 import FractionSlider from "./FractionSlider";
+import Plots from "./Plots";
 import numericFormatProps from "./numericFormatProps";
 
 function DeliberationPage({
   currentSavings,
   monthlyIncome,
+  goalPrice,
   savedFraction,
   setSavedFraction,
   riskPreference,
@@ -16,27 +16,14 @@ function DeliberationPage({
 }: {
   currentSavings: number;
   monthlyIncome: number;
+  goalPrice: number | undefined;
   savedFraction: number;
   setSavedFraction: React.Dispatch<SetStateAction<number>>;
   riskPreference: number;
   setRiskPreference: React.Dispatch<SetStateAction<number>>;
 }) {
-  const savedMonthly = Math.round(monthlyIncome * savedFraction);
-  const spentMonthly = monthlyIncome - savedMonthly;
-
-  const [response, setResponse] = useState();
-  useEffect(() => {
-    axios
-      .post("http://localhost:8000/", {
-        initial_investment: currentSavings,
-        monthly_addition: savedMonthly,
-        bond_fraction: riskPreference,
-        goal_price: null,
-      })
-      .then(({ data }) => {
-        setResponse(data);
-      });
-  }, [currentSavings, savedMonthly, riskPreference]);
+  const monthlySavings = Math.round(monthlyIncome * savedFraction);
+  const monthlySpending = monthlyIncome - monthlySavings;
 
   return (
     <div className="Page">
@@ -49,9 +36,9 @@ function DeliberationPage({
         Ile zamierzasz odkładać, a ile wydawać?
         <FractionSlider value={savedFraction} setValue={setSavedFraction} />
         Odkładasz{" "}
-        {numericFormatter(savedMonthly.toString(), numericFormatProps)},
-        wydajesz {numericFormatter(spentMonthly.toString(), numericFormatProps)}
-        .
+        {numericFormatter(monthlySavings.toString(), numericFormatProps)},
+        wydajesz{" "}
+        {numericFormatter(monthlySpending.toString(), numericFormatProps)}.
       </div>
       <div>
         Zysk krótko- i długoterminowy nie idą w parze. Inwestycje, na których
@@ -61,9 +48,11 @@ function DeliberationPage({
         znosisz takie wahania?
         <FractionSlider value={riskPreference} setValue={setRiskPreference} />
       </div>
-      <Plot
-        layout={{ title: "Prawdopodobieństwa" }}
-        data={[{ type: "scatter", y: response.gain_probability }]}
+      <Plots
+        currentSavings={currentSavings}
+        monthlySavings={monthlySavings}
+        riskPreference={riskPreference}
+        goalPrice={goalPrice}
       />
     </div>
   );

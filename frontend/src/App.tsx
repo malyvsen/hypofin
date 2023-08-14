@@ -35,6 +35,7 @@ function App() {
           <DeliberationPage
             currentSavings={currentSavings as number}
             monthlyIncome={monthlyIncome as number}
+            goalPrice={goalKnown === true ? goalPrice : undefined}
             savedFraction={savedFraction}
             setSavedFraction={setSavedFraction}
             riskPreference={riskPreference}
