@@ -33,6 +33,7 @@ function App() {
         path="deliberation"
         element={
           <DeliberationPage
+            currentSavings={currentSavings as number}
             monthlyIncome={monthlyIncome as number}
             savedFraction={savedFraction}
             setSavedFraction={setSavedFraction}

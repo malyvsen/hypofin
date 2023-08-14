@@ -1,5 +1,6 @@
 import numpy as np
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .caching import refresh_daily
 from .portfolio import Portfolio
@@ -12,6 +13,13 @@ NUM_SCENARIOS = 1000
 NUM_RETURNED_SCENARIOS = 10
 
 server = FastAPI()
+server.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @server.post("/")
