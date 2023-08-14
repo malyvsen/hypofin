@@ -11,6 +11,8 @@ function App() {
       <SituationPage
         currentSavings={currentSavings}
         setCurrentSavings={setCurrentSavings}
+        monthlyIncome={monthlyIncome}
+        setMonthlyIncome={setMonthlyIncome}
       ></SituationPage>
     </div>
   );

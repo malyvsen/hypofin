@@ -2,15 +2,15 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { CiCircleQuestion } from "react-icons/ci";
 
-function MoneyInput({ value, setValue, help }) {
+function MoneyInput({ title, help, value, setValue }) {
   return (
     <div>
-      Twoje obecne oszczędności{" "}
+      {title}{" "}
       <input
         type="number"
         min={0}
         step={1000}
-        value={value === undefined ? 0 : value}
+        value={value === undefined ? "" : value}
         onChange={(e) => setValue(e.target.value)}
       />{" "}
       zł{" "}
