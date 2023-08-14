@@ -11,7 +11,7 @@ function MoneyInput({ title, help, value, setValue }) {
         min={0}
         step={1000}
         value={value === undefined ? "" : value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => setValue(parseInt(e.target.value))}
       />{" "}
       zł{" "}
       {help === undefined ? (

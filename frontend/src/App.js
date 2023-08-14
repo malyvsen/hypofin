@@ -5,7 +5,7 @@ function App() {
   const [currentSavings, setCurrentSavings] = useState();
   const [monthlyIncome, setMonthlyIncome] = useState();
   const [goalKnown, setGoalKnown] = useState();
-  const [goalCost, setGoalCost] = useState();
+  const [goalPrice, setGoalPrice] = useState();
   return (
     <div className="App">
       <SituationPage
@@ -13,6 +13,10 @@ function App() {
         setCurrentSavings={setCurrentSavings}
         monthlyIncome={monthlyIncome}
         setMonthlyIncome={setMonthlyIncome}
+        goalKnown={goalKnown}
+        setGoalKnown={setGoalKnown}
+        goalPrice={goalPrice}
+        setGoalPrice={setGoalPrice}
       ></SituationPage>
     </div>
   );

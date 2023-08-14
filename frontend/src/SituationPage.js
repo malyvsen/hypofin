@@ -5,6 +5,10 @@ function SituationPage({
   setCurrentSavings,
   monthlyIncome,
   setMonthlyIncome,
+  goalKnown,
+  setGoalKnown,
+  goalPrice,
+  setGoalPrice,
 }) {
   return (
     <div className="Page">
@@ -21,6 +25,27 @@ function SituationPage({
         value={monthlyIncome}
         setValue={setMonthlyIncome}
       />
+      <div>
+        Wiesz już, na co zbierasz?{" "}
+        <button type="button" onClick={() => setGoalKnown(true)}>
+          {goalKnown === true ? <b>Tak</b> : "Tak"}
+        </button>
+        <button type="button" onClick={() => setGoalKnown(false)}>
+          {goalKnown === false ? <b>Nie</b> : "Nie"}
+        </button>
+      </div>
+      {goalKnown === true ? (
+        <MoneyInput
+          title="Ile to kosztuje?"
+          help="Orientacyjna cena twojego celu. Jeśli nie jesteś w ogóle w stanie jej określić, zaznacz, że cel nie jest ci znany."
+          value={goalPrice}
+          setValue={setGoalPrice}
+        ></MoneyInput>
+      ) : goalKnown === false ? (
+        "Bez obaw! Wciąż jesteśmy w stanie ci pomóc."
+      ) : (
+        <></>
+      )}
     </div>
   );
 }
