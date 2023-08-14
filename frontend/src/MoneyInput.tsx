@@ -1,4 +1,5 @@
 import { SetStateAction } from "react";
+import { NumericFormat } from "react-number-format";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { CiCircleQuestion } from "react-icons/ci";
@@ -17,14 +18,15 @@ function MoneyInput({
   return (
     <div>
       {title}{" "}
-      <input
-        type="number"
-        min={0}
-        step={1000}
+      <NumericFormat
+        thousandsGroupStyle="thousand"
+        thousandSeparator=" "
+        suffix=" zł"
+        allowNegative={false}
+        decimalScale={0}
         value={value === undefined ? "" : value}
-        onChange={(e) => setValue(parseInt(e.target.value))}
+        onValueChange={(values) => setValue(parseInt(values.value))}
       />{" "}
-      zł{" "}
       {help === undefined ? (
         <></>
       ) : (
