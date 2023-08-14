@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { Routes, Route } from "react-router-dom";
+
 import SituationPage from "./SituationPage";
+import DeliberationPage from "./DeliberationPage";
 
 function App() {
   const [currentSavings, setCurrentSavings] = useState<number | undefined>();
@@ -8,18 +11,24 @@ function App() {
   const [goalPrice, setGoalPrice] = useState<number | undefined>();
 
   return (
-    <div className="App">
-      <SituationPage
-        currentSavings={currentSavings}
-        setCurrentSavings={setCurrentSavings}
-        monthlyIncome={monthlyIncome}
-        setMonthlyIncome={setMonthlyIncome}
-        goalKnown={goalKnown}
-        setGoalKnown={setGoalKnown}
-        goalPrice={goalPrice}
-        setGoalPrice={setGoalPrice}
-      ></SituationPage>
-    </div>
+    <Routes>
+      <Route
+        path="situation"
+        element={
+          <SituationPage
+            currentSavings={currentSavings}
+            setCurrentSavings={setCurrentSavings}
+            monthlyIncome={monthlyIncome}
+            setMonthlyIncome={setMonthlyIncome}
+            goalKnown={goalKnown}
+            setGoalKnown={setGoalKnown}
+            goalPrice={goalPrice}
+            setGoalPrice={setGoalPrice}
+          />
+        }
+      />
+      <Route path="deliberation" element={<DeliberationPage />} />
+    </Routes>
   );
 }
 

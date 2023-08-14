@@ -1,4 +1,6 @@
 import { SetStateAction } from "react";
+import { Link } from "react-router-dom";
+
 import MoneyInput from "./MoneyInput";
 
 function SituationPage({
@@ -52,7 +54,15 @@ function SituationPage({
           setValue={setGoalPrice}
         ></MoneyInput>
       ) : goalKnown === false ? (
-        "Bez obaw! Wciąż jesteśmy w stanie ci pomóc."
+        <div>Bez obaw! Wciąż jesteśmy w stanie ci pomóc.</div>
+      ) : (
+        <></>
+      )}
+      {currentSavings !== undefined &&
+      monthlyIncome !== undefined &&
+      (goalKnown === false ||
+        (goalKnown === true && goalPrice !== undefined)) ? (
+        <Link to="/deliberation">Następny krok</Link>
       ) : (
         <></>
       )}
