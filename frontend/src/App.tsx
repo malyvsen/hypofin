@@ -9,6 +9,8 @@ function App() {
   const [monthlyIncome, setMonthlyIncome] = useState<number | undefined>();
   const [goalKnown, setGoalKnown] = useState<boolean | undefined>();
   const [goalPrice, setGoalPrice] = useState<number | undefined>();
+  const [savedFraction, setSavedFraction] = useState(0.5);
+  const [riskPreference, setRiskPreference] = useState(0);
 
   return (
     <Routes>
@@ -27,7 +29,16 @@ function App() {
           />
         }
       />
-      <Route path="deliberation" element={<DeliberationPage />} />
+      <Route
+        path="deliberation"
+        element={
+          <DeliberationPage
+            monthlyIncome={monthlyIncome as number}
+            savedFraction={savedFraction}
+            setSavedFraction={setSavedFraction}
+          />
+        }
+      />
     </Routes>
   );
 }

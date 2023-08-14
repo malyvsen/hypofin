@@ -3,6 +3,7 @@ import { NumericFormat } from "react-number-format";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { CiCircleQuestion } from "react-icons/ci";
+import numericFormatProps from "./numericFormatProps";
 
 function MoneyInput({
   title,
@@ -19,11 +20,7 @@ function MoneyInput({
     <div>
       {title}{" "}
       <NumericFormat
-        thousandsGroupStyle="thousand"
-        thousandSeparator=" "
-        suffix=" zł"
-        allowNegative={false}
-        decimalScale={0}
+        {...numericFormatProps}
         value={value === undefined ? "" : value}
         onValueChange={(values) => setValue(parseInt(values.value))}
       />{" "}
