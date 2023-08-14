@@ -36,6 +36,8 @@ function App() {
             monthlyIncome={monthlyIncome as number}
             savedFraction={savedFraction}
             setSavedFraction={setSavedFraction}
+            riskPreference={riskPreference}
+            setRiskPreference={setRiskPreference}
           />
         }
       />
