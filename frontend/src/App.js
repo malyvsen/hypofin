@@ -1,7 +1,19 @@
-import "./App.css";
+import { useState } from "react";
+import SituationPage from "./SituationPage";
 
 function App() {
-  return <div className="App"></div>;
+  const [currentSavings, setCurrentSavings] = useState();
+  const [monthlyIncome, setMonthlyIncome] = useState();
+  const [goalKnown, setGoalKnown] = useState();
+  const [goalCost, setGoalCost] = useState();
+  return (
+    <div className="App">
+      <SituationPage
+        currentSavings={currentSavings}
+        setCurrentSavings={setCurrentSavings}
+      ></SituationPage>
+    </div>
+  );
 }
 
 export default App;
