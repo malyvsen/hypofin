@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 
 import SituationPage from "./SituationPage";
 import DeliberationPage from "./DeliberationPage";
+import LandingPage from "./LandingPage";
 
 function App() {
   const [currentSavings, setCurrentSavings] = useState<number | undefined>();
@@ -14,6 +15,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route
         path="situation"
         element={
