@@ -40,19 +40,33 @@ function Plots({
   return (
     <>
       <Plot
-        layout={{ title: "Prawdopodobieństwa" }}
-        data={[
-          {
-            type: "scatter",
-            name: "Szanse na zysk",
-            y: response.gain_probability,
-          },
-          {
-            type: "scatter",
-            name: "Szanse na stratę",
-            y: response.loss_probability,
-          },
-        ]}
+        layout={{
+          title: "Prawdopodobieństwa",
+          showlegend: true,
+          yaxis: { range: [-0.05, 1.05] },
+        }}
+        data={
+          goalPrice === undefined
+            ? [
+                {
+                  type: "scatter",
+                  name: "Szanse zysku",
+                  y: response.gain_probability,
+                },
+                {
+                  type: "scatter",
+                  name: "Szanse straty",
+                  y: response.loss_probability,
+                },
+              ]
+            : [
+                {
+                  type: "scatter",
+                  name: "Szanse osiągnięcia celu",
+                  y: response.success_probability,
+                } as Data,
+              ]
+        }
       />
       <Plot
         layout={{ title: "Przykładowe scenariusze" }}
@@ -62,17 +76,31 @@ function Plots({
             name: "Zainwestowana kwota",
             y: response.bank_trajectory,
           } as Data,
-        ].concat(
-          response.scenarios.map((scenario) => {
-            return {
-              type: "scatter",
-              name: "Przykładowa wartość inwestycji",
-              showlegend: false,
-              line: { color: "green" },
-              y: scenario.savings_trajectory,
-            } as Data;
-          })
-        )}
+        ]
+          .concat(
+            response.scenarios.map((scenario) => {
+              return {
+                type: "scatter",
+                name: "Wartość inwestycji",
+                showlegend: false,
+                line: { color: "green" },
+                y: scenario.savings_trajectory,
+              } as Data;
+            })
+          )
+          .concat(
+            goalPrice === undefined
+              ? []
+              : response.scenarios.map((scenario) => {
+                  return {
+                    type: "scatter",
+                    name: "Cena celu",
+                    showlegend: false,
+                    line: { color: "blue" },
+                    y: scenario.goal_trajectory,
+                  } as Data;
+                })
+          )}
       />
     </>
   );
