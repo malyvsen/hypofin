@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 import Plot from "react-plotly.js";
 import { Data } from "plotly.js";
-import axios from "axios";
+import axios, { CanceledError } from "axios";
 
 function Plots({
   currentSavings,
@@ -19,16 +19,28 @@ function Plots({
   const [debouncedRiskPreference] = useDebounce(riskPreference, 100);
   const [response, setResponse] = useState<BackendResponse>();
   useEffect(() => {
+    const controller = new AbortController();
     axios
-      .post("http://localhost:8000/", {
-        initial_investment: currentSavings,
-        monthly_addition: debouncedMonthlySavings,
-        bond_fraction: 1 - debouncedRiskPreference,
-        goal_price: goalPrice === undefined ? null : goalPrice,
-      })
+      .post(
+        "http://localhost:8000/",
+        {
+          initial_investment: currentSavings,
+          monthly_addition: debouncedMonthlySavings,
+          bond_fraction: 1 - debouncedRiskPreference,
+          goal_price: goalPrice === undefined ? null : goalPrice,
+        },
+        { signal: controller.signal }
+      )
       .then(({ data }) => {
         setResponse(data);
+      })
+      .catch((error) => {
+        if (error.code === "ERR_CANCELED") return;
+        throw error;
       });
+    return () => {
+      controller.abort();
+    };
   }, [
     currentSavings,
     debouncedMonthlySavings,
