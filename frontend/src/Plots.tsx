@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 import Plot from "react-plotly.js";
 import { Data } from "plotly.js";
-import axios, { CanceledError } from "axios";
+import axios from "axios";
 
 function Plots({
   currentSavings,
