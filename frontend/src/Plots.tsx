@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 import Plot from "react-plotly.js";
+import { Data } from "plotly.js";
 import axios from "axios";
 
 function Plots({
@@ -37,21 +38,43 @@ function Plots({
 
   if (response === undefined) return <></>;
   return (
-    <Plot
-      layout={{ title: "Prawdopodobieństwa" }}
-      data={[
-        {
-          type: "scatter",
-          name: "Szanse na zysk",
-          y: response.gain_probability,
-        },
-        {
-          type: "scatter",
-          name: "Szanse na stratę",
-          y: response.loss_probability,
-        },
-      ]}
-    />
+    <>
+      <Plot
+        layout={{ title: "Prawdopodobieństwa" }}
+        data={[
+          {
+            type: "scatter",
+            name: "Szanse na zysk",
+            y: response.gain_probability,
+          },
+          {
+            type: "scatter",
+            name: "Szanse na stratę",
+            y: response.loss_probability,
+          },
+        ]}
+      />
+      <Plot
+        layout={{ title: "Przykładowe scenariusze" }}
+        data={[
+          {
+            type: "scatter",
+            name: "Zainwestowana kwota",
+            y: response.bank_trajectory,
+          } as Data,
+        ].concat(
+          response.scenarios.map((scenario) => {
+            return {
+              type: "scatter",
+              name: "Przykładowa wartość inwestycji",
+              showlegend: false,
+              line: { color: "green" },
+              y: scenario.savings_trajectory,
+            } as Data;
+          })
+        )}
+      />
+    </>
   );
 }
 
