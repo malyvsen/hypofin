@@ -56,17 +56,19 @@ class Scenario:
         historical_stock_returns = prices_to_returns(historical_prices_pln("^GSPC"))
 
         # based on Shiller, Robert J. 2000. Irrational Exuberance
-        # and an assumption that stock returns are independent of inflation
-        expected_stock_returns = annual_to_monthly(1 / global_cape_ratio())
+        expected_real_stock_returns = annual_to_monthly(1 / global_cape_ratio())
 
         # using empirical distribution and assuming iid - keep it simple, stupid
-        sampled_stock_returns = np.random.choice(
+        sampled_real_stock_returns = np.random.choice(
             historical_stock_returns
             - historical_stock_returns.mean()
-            + expected_stock_returns,
+            + expected_real_stock_returns,
             size=num_months,
             replace=True,
         )
+        sampled_stock_returns = (1 + sampled_real_stock_returns) * (
+            1 + sampled_inflation
+        ) - 1
 
         return cls(
             inflation=sampled_inflation,
