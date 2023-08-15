@@ -56,9 +56,12 @@ class Trajectory:
         )
 
     def success_indicator(self, initial_goal_price: float):
-        success_moment = np.where(
-            self.scenario.inflated_price(initial_goal_price) <= self.post_tax_savings
-        )[0].min()
         result = np.zeros(self.scenario.num_months + 1)
+        temporary_success = (
+            self.scenario.inflated_price(initial_goal_price) <= self.post_tax_savings
+        )
+        if not temporary_success.any():
+            return result
+        success_moment = np.where(temporary_success)[0].min()
         result[success_moment:] = 1
         return result
