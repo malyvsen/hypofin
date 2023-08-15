@@ -3,7 +3,7 @@ import { NumericFormat } from "react-number-format";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { CiCircleQuestion } from "react-icons/ci";
-import numericFormatProps from "./numericFormatProps";
+import { numericFormatProps } from "./formatMoney";
 
 function MoneyInput({
   title,

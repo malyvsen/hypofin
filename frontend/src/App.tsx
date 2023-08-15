@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import SituationPage from "./SituationPage";
 import DeliberationPage from "./DeliberationPage";
 import LandingPage from "./LandingPage";
+import ResultsPage from "./ResultsPage";
 
 function App() {
   const [currentSavings, setCurrentSavings] = useState<number | undefined>();
@@ -42,6 +43,17 @@ function App() {
             setSavedFraction={setSavedFraction}
             riskPreference={riskPreference}
             setRiskPreference={setRiskPreference}
+          />
+        }
+      />
+      <Route
+        path="results"
+        element={
+          <ResultsPage
+            currentSavings={currentSavings as number}
+            monthlyIncome={monthlyIncome as number}
+            savedFraction={savedFraction}
+            riskPreference={riskPreference}
           />
         }
       />

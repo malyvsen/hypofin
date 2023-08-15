@@ -50,7 +50,7 @@ function Plots({
 
   if (response === undefined) return <></>;
   return (
-    <>
+    <div>
       <Plot
         layout={{
           title: "Prawdopodobieństwa",
@@ -114,7 +114,7 @@ function Plots({
                 })
           )}
       />
-    </>
+    </div>
   );
 }
 

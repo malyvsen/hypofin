@@ -1,9 +1,9 @@
 import { SetStateAction } from "react";
-import { numericFormatter } from "react-number-format";
 
 import FractionSlider from "./FractionSlider";
 import Plots from "./Plots";
-import numericFormatProps from "./numericFormatProps";
+import formatMoney from "./formatMoney";
+import { Link } from "react-router-dom";
 
 function DeliberationPage({
   currentSavings,
@@ -33,12 +33,10 @@ function DeliberationPage({
         jak wpływa to na możliwe wyniki.
       </i>
       <div>
-        Ile zamierzasz odkładać, a ile wydawać?
+        Ile zamierzasz miesięcznie odkładać, a ile wydawać?
         <FractionSlider value={savedFraction} setValue={setSavedFraction} />
-        Odkładasz{" "}
-        {numericFormatter(monthlySavings.toString(), numericFormatProps)},
-        wydajesz{" "}
-        {numericFormatter(monthlySpending.toString(), numericFormatProps)}.
+        Odkładasz {formatMoney(monthlySavings)}, wydajesz{" "}
+        {formatMoney(monthlySpending)}.
       </div>
       <div>
         Zysk krótko- i długoterminowy nie idą w parze. Inwestycje, na których
@@ -54,6 +52,8 @@ function DeliberationPage({
         riskPreference={riskPreference}
         goalPrice={goalPrice}
       />
+      Wiesz już, jak wygląda twoja optymalna inwestycja? Jeśli tak,{" "}
+      <Link to="/results">przejdź do prezentacji wyników</Link>.
     </div>
   );
 }
